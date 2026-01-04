@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, User, Bot, Loader2, RefreshCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { askQuestion } from '../services/api';
 
 interface Message {
     role: 'user' | 'bot';
@@ -28,22 +29,12 @@ const ChatInterface: React.FC = () => {
         setIsLoading(true);
 
         try {
-            const response = await fetch('http://localhost:8000/ask', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ question: input }),
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                setMessages(prev => [...prev, { role: 'bot', content: data.answer }]);
-            } else {
-                setMessages(prev => [...prev, { role: 'bot', content: `Error: ${data.detail || 'Failed to get response'}` }]);
-            }
-        } catch (err) {
+            const data = await askQuestion(input);
+            setMessages(prev => [...prev, { role: 'bot', content: data.answer }]);
+        } catch (err: any) {
             console.error(err);
-            setMessages(prev => [...prev, { role: 'bot', content: 'Connection to backend lost.' }]);
+            const detail = err.response?.data?.detail || 'Connection to backend lost.';
+            setMessages(prev => [...prev, { role: 'bot', content: `Error: ${detail}` }]);
         } finally {
             setIsLoading(false);
         }
