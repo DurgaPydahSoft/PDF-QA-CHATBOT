@@ -28,7 +28,7 @@ qa_agent = QAAgent(vector_store)
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to the AI-Based PDF Q&A Agent API by - Bannu"}
+    return {"message": "Welcome to the AI-Based PDF Q&A Agent API by Bannu"}
 
 @app.post("/upload-pdf")
 async def upload_pdf(files: List[UploadFile] = File(...)):
