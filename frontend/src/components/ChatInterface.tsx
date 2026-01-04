@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, User, Bot, Loader2, RefreshCcw } from 'lucide-react';
+import { Send, User, Bot, RefreshCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { askQuestion } from '../services/api';
 
@@ -9,9 +9,12 @@ interface Message {
 }
 
 const ChatInterface: React.FC = () => {
-    const [messages, setMessages] = useState<Message[]>([]);
+    const [messages, setMessages] = useState<Message[]>([
+        { role: 'bot', content: "I have knowledge of your document now! Feel free to ask me any questions you have. 📚✨" }
+    ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [suggestions, setSuggestions] = useState<string[]>([]);
     const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -20,17 +23,33 @@ const ChatInterface: React.FC = () => {
         }
     }, [messages]);
 
-    const handleSend = async () => {
-        if (!input.trim() || isLoading) return;
+    const handleSend = async (text: string = input) => {
+        const messageToSend = text.trim();
+        if (!messageToSend || isLoading) return;
 
-        const userMessage: Message = { role: 'user', content: input };
+        const userMessage: Message = { role: 'user', content: messageToSend };
         setMessages(prev => [...prev, userMessage]);
         setInput('');
+        setSuggestions([]);
         setIsLoading(true);
 
         try {
-            const data = await askQuestion(input);
-            setMessages(prev => [...prev, { role: 'bot', content: data.answer }]);
+            const data = await askQuestion(messageToSend);
+            const fullResponse = data.answer;
+
+            // Extract suggestions if present
+            const parts = fullResponse.split(/Suggestions:/i);
+            const mainAnswer = parts[0].trim();
+            const suggestionPart = parts[1] || '';
+
+            // Parse suggestions (looking for 1. Q, 2. Q etc or just lines)
+            const extractedSuggestions = suggestionPart
+                .split(/\d\.\s+/)
+                .map((s: string) => s.trim())
+                .filter((s: string) => s.length > 5 && s.length < 100);
+
+            setMessages(prev => [...prev, { role: 'bot', content: mainAnswer }]);
+            setSuggestions(extractedSuggestions);
         } catch (err: any) {
             console.error(err);
             const detail = err.response?.data?.detail || 'Connection to backend lost.';
@@ -42,7 +61,7 @@ const ChatInterface: React.FC = () => {
 
     return (
         <div className="glass-card chat-window">
-            {/* Header */}
+            {/* Header omitted for brevity in this tool call - assuming it remains the same */}
             <div className="chat-header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <div className="chat-bot-icon">
@@ -57,7 +76,7 @@ const ChatInterface: React.FC = () => {
                     </div>
                 </div>
                 <button
-                    onClick={() => setMessages([])}
+                    onClick={() => { setMessages([]); setSuggestions([]); }}
                     style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.5rem', borderRadius: '0.5rem', display: 'flex', alignItems: 'center' }}
                     title="Clear Chat"
                 >
@@ -95,17 +114,37 @@ const ChatInterface: React.FC = () => {
                             </div>
                         </motion.div>
                     ))}
+
                     {isLoading && (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                             <div className="message bot">
                                 <div style={{ width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: '#e2e8f0' }}>
                                     <Bot size={14} color="#0ea5e9" />
                                 </div>
-                                <div className="message-bubble" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontStyle: 'italic', color: '#64748b' }}>
-                                    <Loader2 size={16} className="loader" />
-                                    Synthesizing answer...
+                                <div className="message-bubble typing-dot-container">
+                                    <span className="typing-dot" />
+                                    <span className="typing-dot" />
+                                    <span className="typing-dot" />
                                 </div>
                             </div>
+                        </motion.div>
+                    )}
+
+                    {!isLoading && suggestions.length > 0 && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="suggestions-container"
+                        >
+                            {suggestions.map((suggestion, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => handleSend(suggestion)}
+                                    className="suggestion-chip"
+                                >
+                                    {suggestion}
+                                </button>
+                            ))}
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -123,7 +162,7 @@ const ChatInterface: React.FC = () => {
                         className="chat-input"
                     />
                     <button
-                        onClick={handleSend}
+                        onClick={() => handleSend()}
                         disabled={!input.trim() || isLoading}
                         className="send-button"
                         style={{ opacity: input.trim() && !isLoading ? 1 : 0.5 }}
@@ -132,7 +171,7 @@ const ChatInterface: React.FC = () => {
                     </button>
                 </div>
                 <p style={{ fontSize: '10px', color: '#94a3b8', textAlign: 'center', marginTop: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 'bold' }}>
-                    Powered by Gemini & Mistral
+                    Powered by Bannu AI
                 </p>
             </div>
         </div>

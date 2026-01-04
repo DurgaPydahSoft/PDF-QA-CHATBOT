@@ -362,6 +362,89 @@ body {
   background: #1e293b;
 }
 
+/* Suggestions & Interactivity */
+.suggestions-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  margin-left: 2.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.suggestion-chip {
+  background: white;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  padding: 0.5rem 1rem;
+  border-radius: 2rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.dark .suggestion-chip {
+  background: rgba(14, 165, 233, 0.05);
+  border-color: var(--primary);
+}
+
+.suggestion-chip:hover {
+  background: var(--primary);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.2);
+}
+
+/* Typing Dots */
+.typing-dot-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0.75rem 1rem !important;
+  background: #f1f5f9 !important;
+}
+
+.dark .typing-dot-container {
+  background: #1e293b !important;
+}
+
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  background: #94a3b8;
+  border-radius: 50%;
+  animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing {
+
+  0%,
+  80%,
+  100% {
+    transform: scale(0);
+    opacity: 0.3;
+  }
+
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 .chat-input-area {
   padding: 1.5rem;
   background: white;
@@ -641,6 +724,20 @@ body {
   .send-button {
     width: 2.25rem;
     height: 2.25rem;
+  }
+
+  .suggestions-container {
+    margin-left: 0.5rem;
+    justify-content: center;
+  }
+
+  .suggestion-chip {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.75rem;
+    max-width: 100%;
+    white-space: normal;
+    text-align: left;
+    line-height: 1.2;
   }
 }
 

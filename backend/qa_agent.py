@@ -19,13 +19,25 @@ class QAAgent:
         
         # 3. Construct prompt with context
         context = "\n---\n".join([chunk for chunk, dist in relevant_chunks])
-        prompt = f"""You are a helpful AI assistant. Answer the question based ONLY on the provided context from a PDF document. 
-If the answer is not in the context, say that you don't know based on the document.
+        prompt = f"""You are a friendly and proactive AI assistant. Answer the question based ONLY on the provided context. 
+If the answer is not in the context, politely say that you don't know based on the document.
+
+Your goal is to be helpful and engaging. 
 
 Context:
 {context}
 
 Question: {question}
+
+Answer in a natural, helpful tone. At the very end of your response, always provide exactly 3 brief follow-up questions that the user might want to ask next, prefixed with 'Suggestions:'.
+
+Example format:
+... your answer here ...
+
+Suggestions:
+1. [Question 1]
+2. [Question 2]
+3. [Question 3]
 
 Answer:"""
 
