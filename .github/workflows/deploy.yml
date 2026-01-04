@@ -31,5 +31,5 @@ jobs:
           git commit -m "Auto-deploy from GitHub Actions"
           
           # Push to Hugging Face
-          # User name: dpkakileti, Space: DOC-CHAT-BOT
-          git push --force https://dpkakileti:$HF_TOKEN@huggingface.co/spaces/DOC-CHAT-BOT main
+          # User: dpkakileti, Space: DOC-CHAT-BOT
+          git push --force https://dpkakileti:$HF_TOKEN@huggingface.co/spaces/dpkakileti/DOC-CHAT-BOT main
