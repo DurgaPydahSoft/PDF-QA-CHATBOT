@@ -1,0 +1,35 @@
+name: Sync to Hugging Face Spaces
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+      
+      - name: Push to HF
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          # Create a temporary directory for the backend files
+          mkdir temp_hf_sync
+          cp -r backend/* temp_hf_sync/
+          cd temp_hf_sync
+          
+          # Initialize git and push to Hugging Face
+          git init
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add .
+          git commit -m "Auto-deploy from GitHub Actions"
+          
+          # Push to Hugging Face
+          # User name: dpkakileti, Space: DOC-CHAT-BOT
+          git push --force https://dpkakileti:$HF_TOKEN@huggingface.co/spaces/DOC-CHAT-BOT main
