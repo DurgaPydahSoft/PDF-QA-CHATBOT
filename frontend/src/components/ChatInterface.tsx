@@ -45,8 +45,8 @@ const ChatInterface: React.FC = () => {
             {/* Header */}
             <div className="chat-header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ width: '40px', height: '40px', background: 'rgba(14, 165, 233, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Bot size={24} color="#0ea5e9" />
+                    <div className="chat-bot-icon">
+                        <Bot size={20} color="#0ea5e9" />
                     </div>
                     <div>
                         <h3 style={{ fontWeight: 'bold', margin: 0 }}>AI Assistant</h3>
@@ -68,8 +68,8 @@ const ChatInterface: React.FC = () => {
             {/* Messages */}
             <div ref={scrollRef} className="messages-area">
                 {messages.length === 0 && (
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '2rem' }}>
-                        <div style={{ width: '64px', height: '64px', background: 'white', borderRadius: '1.25rem', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+                    <div className="chat-empty-state">
+                        <div className="chat-empty-icon">
                             <Bot size={32} color="#0ea5e9" />
                         </div>
                         <h4 style={{ fontSize: '1.125rem', fontWeight: 'bold', color: '#334155' }}>Start the conversation!</h4>
@@ -87,8 +87,8 @@ const ChatInterface: React.FC = () => {
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             className={`message ${msg.role === 'user' ? 'user' : 'bot'}`}
                         >
-                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: msg.role === 'user' ? '#0ea5e9' : '#e2e8f0' }}>
-                                {msg.role === 'user' ? <User size={16} color="white" /> : <Bot size={16} color="#0ea5e9" />}
+                            <div style={{ width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: msg.role === 'user' ? '#0ea5e9' : '#e2e8f0' }}>
+                                {msg.role === 'user' ? <User size={14} color="white" /> : <Bot size={14} color="#0ea5e9" />}
                             </div>
                             <div className="message-bubble">
                                 {msg.content}
@@ -98,8 +98,8 @@ const ChatInterface: React.FC = () => {
                     {isLoading && (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                             <div className="message bot">
-                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: '#e2e8f0' }}>
-                                    <Bot size={16} color="#0ea5e9" />
+                                <div style={{ width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: '#e2e8f0' }}>
+                                    <Bot size={14} color="#0ea5e9" />
                                 </div>
                                 <div className="message-bubble" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontStyle: 'italic', color: '#64748b' }}>
                                     <Loader2 size={16} className="loader" />

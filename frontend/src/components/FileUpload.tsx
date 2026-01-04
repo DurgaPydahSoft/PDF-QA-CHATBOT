@@ -72,12 +72,11 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess }) => {
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="glass-card"
-                style={{ padding: '2rem', position: 'relative', overflow: 'hidden' }}
+                className="glass-card upload-card"
             >
                 <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '4px', background: 'linear-gradient(to right, #38bdf8, #0ea5e9)' }} />
 
-                <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <h2 className="upload-title">
                     <Upload size={24} color="#0ea5e9" />
                     Upload Documents
                 </h2>
@@ -85,7 +84,6 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess }) => {
                 <div
                     onClick={() => fileInputRef.current?.click()}
                     className={`dropzone ${files.length > 0 ? 'active' : ''}`}
-                    style={{ padding: files.length > 0 ? '1.5rem' : '3rem' }}
                 >
                     <input
                         type="file"
@@ -98,42 +96,50 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess }) => {
 
                     {files.length === 0 ? (
                         <div>
-                            <div style={{ width: '64px', height: '64px', background: 'rgba(14, 165, 233, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
-                                <Upload size={32} color="#0ea5e9" style={{ margin: 'auto' }} />
+                            <div style={{ width: '48px', height: '48px', background: 'rgba(14, 165, 233, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.75rem' }}>
+                                <Upload size={24} color="#0ea5e9" style={{ margin: 'auto' }} />
                             </div>
-                            <p style={{ fontWeight: 500, color: '#64748b' }}>Click to browse or drag and drop</p>
-                            <p style={{ fontSize: '0.875rem', color: '#94a3b8', marginTop: '0.25rem' }}>PDF, Word, Excel, PowerPoint</p>
+                            <p style={{ fontWeight: 600, color: '#64748b' }}>Upload Documents</p>
+                            <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.25rem' }}>Tap to browse or drag & drop</p>
                         </div>
                     ) : (
-                        <div style={{ width: '100%', maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <div className="file-list">
                             {files.map((file, idx) => (
-                                <div key={idx} style={{ background: 'white', padding: '0.75rem', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid #e2e8f0' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', overflow: 'hidden' }}>
+                                <div key={idx} className="file-item">
+                                    <div className="file-info">
                                         {getFileIcon(file.name)}
-                                        <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        <span className="file-name">
                                             {file.name}
                                         </span>
                                     </div>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); removeFile(idx); }}
-                                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex' }}
+                                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', padding: '4px' }}
                                     >
                                         <X size={16} />
                                     </button>
                                 </div>
                             ))}
+                            <div style={{ marginTop: '0.5rem', textAlign: 'center' }}>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                                    style={{ background: 'transparent', border: 'none', color: '#0ea5e9', fontSize: '0.75rem', fontWeight: 'bold', cursor: 'pointer' }}
+                                >
+                                    + Add more files
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>
 
                 {error && (
                     <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
                         style={{ marginTop: '1rem', padding: '0.75rem', background: '#fef2f2', color: '#dc2626', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid #fee2e2' }}
                     >
                         <AlertCircle size={16} />
-                        <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>{error}</span>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>{error}</span>
                     </motion.div>
                 )}
 
@@ -144,18 +150,19 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess }) => {
                 >
                     {status === 'uploading' ? (
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                            <Loader2 size={20} className="loader" />
-                            Processing {files.length} Document(s)...
+                            <Loader2 size={18} className="loader" />
+                            Processing...
                         </div>
                     ) : status === 'success' ? (
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                            <CheckCircle size={20} />
-                            Upload Complete
+                            <CheckCircle size={18} />
+                            Complete!
                         </div>
                     ) : (
-                        `Process ${files.length} File${files.length !== 1 ? 's' : ''}`
+                        `Analyze ${files.length} Document${files.length !== 1 ? 's' : ''}`
                     )}
                 </button>
+
             </motion.div>
         </div>
     );
