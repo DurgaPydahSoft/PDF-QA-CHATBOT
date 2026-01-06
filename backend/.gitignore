@@ -31,3 +31,6 @@ ENV/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Secrets
+service_account.json
