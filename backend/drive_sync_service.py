@@ -46,16 +46,77 @@ class DriveSyncService:
             # Poll every 5 minutes (adjustable)
             time.sleep(300)
 
-    def sync_now(self):
-        if not os.path.exists(self.credentials_path):
-            print(f"Warning: {self.credentials_path} not found. Sync skipped.")
-            return
+    def _get_env_clean(self, key, default=None):
+        val = os.getenv(key, default)
+        if val:
+            val = val.strip()
+            if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
+                return val[1:-1]
+        return val
 
-        creds = service_account.Credentials.from_service_account_file(
-            self.credentials_path, 
-            scopes=['https://www.googleapis.com/auth/drive.readonly']
-        )
-        service = build('drive', 'v3', credentials=creds)
+    def sync_now(self):
+        creds_info = None
+        
+        # 1. Try Individual Environment Variables
+        private_key = self._get_env_clean("GOOGLE_PRIVATE_KEY")
+        client_email = self._get_env_clean("GOOGLE_CLIENT_EMAIL")
+        project_id = self._get_env_clean("GOOGLE_PROJECT_ID")
+        private_key_id = self._get_env_clean("GOOGLE_PRIVATE_KEY_ID")
+
+        try:
+            if private_key and client_email and project_id and private_key_id:
+                print("Using Google credentials from individual environment variables.")
+                creds_info = {
+                    "type": self._get_env_clean("GOOGLE_TYPE", "service_account"),
+                    "project_id": project_id,
+                    "private_key_id": private_key_id,
+                    "private_key": private_key,
+                    "client_email": client_email,
+                    "client_id": self._get_env_clean("GOOGLE_CLIENT_ID"),
+                    "auth_uri": self._get_env_clean("GOOGLE_AUTH_URI", "https://accounts.google.com/o/oauth2/auth"),
+                    "token_uri": self._get_env_clean("GOOGLE_TOKEN_URI", "https://oauth2.googleapis.com/token"),
+                    "auth_provider_x509_cert_url": self._get_env_clean("GOOGLE_AUTH_PROVIDER_CERT_URL", "https://www.googleapis.com/oauth2/v1/certs"),
+                    "client_x509_cert_url": self._get_env_clean("GOOGLE_CLIENT_CERT_URL") or f"https://www.googleapis.com/robot/v1/metadata/x509/{client_email.replace('@', '%40')}",
+                    "universe_domain": self._get_env_clean("GOOGLE_UNIVERSE_DOMAIN", "googleapis.com")
+                }
+            
+            # 2. Try Single JSON Environment Variable
+            if not creds_info:
+                env_creds = self._get_env_clean("GOOGLE_SERVICE_ACCOUNT_JSON")
+                if env_creds:
+                    print("Using Google credentials from JSON environment variable.")
+                    creds_info = json.loads(env_creds)
+
+            # 3. Try Local File
+            if not creds_info and os.path.exists(self.credentials_path):
+                print(f"Using Google credentials from local file: {self.credentials_path}")
+                with open(self.credentials_path, 'r') as f:
+                    creds_info = json.load(f)
+
+            if not creds_info:
+                print("Warning: No Google credentials found. Sync skipped.")
+                return
+
+            # --- AGGRESSIVE SANITIZATION (Applies to all sources) ---
+            if 'private_key' in creds_info:
+                pk = creds_info['private_key']
+                # Replace literal \n and sanitize whitespace
+                sanitized_pk = pk.replace('\\n', '\n').strip()
+                creds_info['private_key'] = sanitized_pk
+                
+                # Debug logging
+                print(f"DEBUG: Credentials loaded for {creds_info.get('client_email')}")
+                print(f"DEBUG: Project ID: {creds_info.get('project_id')}")
+                print(f"DEBUG: Private Key ID: {creds_info.get('private_key_id', 'Missing')}")
+                
+            creds = service_account.Credentials.from_service_account_info(
+                creds_info,
+                scopes=['https://www.googleapis.com/auth/drive.readonly']
+            )
+            service = build('drive', 'v3', credentials=creds)
+        except Exception as e:
+            print(f"Error initializing Google Drive credentials: {e}")
+            return
 
         # Get existing metadata from MongoDB
         processed_files = self.vector_store.get_all_metadata()

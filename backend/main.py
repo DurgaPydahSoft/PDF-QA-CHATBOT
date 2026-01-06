@@ -131,12 +131,18 @@ async def get_drive_status():
     except:
         count = 0
         
+    service_account_available = (
+        os.path.exists("service_account.json") or 
+        os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON") is not None or
+        (os.getenv("GOOGLE_PRIVATE_KEY") is not None and os.getenv("GOOGLE_CLIENT_EMAIL") is not None)
+    )
+
     return {
         "folder_id": drive_sync.folder_id,
         "is_syncing": drive_sync.is_syncing,
         "last_sync": drive_sync.last_sync_time,
         "total_chunks": count,
-        "service_account_exists": os.path.exists("service_account.json"),
+        "service_account_exists": service_account_available,
         "mongodb_connected": MONGODB_URI != "your_mongodb_uri_here"
     }
 
