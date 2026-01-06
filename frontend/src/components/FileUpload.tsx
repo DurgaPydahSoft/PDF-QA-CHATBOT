@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { uploadFiles } from '../services/api';
 
 interface FileUploadProps {
-    onUploadSuccess: (chunks: number) => void;
+    onUploadSuccess: (chunks: number, suggestions: string[]) => void;
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess }) => {
@@ -58,7 +58,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess }) => {
         try {
             const data = await uploadFiles(files);
             setStatus('success');
-            onUploadSuccess(data.chunks);
+            onUploadSuccess(data.chunks, data.suggestions || []);
         } catch (err: any) {
             console.error(err);
             setStatus('error');

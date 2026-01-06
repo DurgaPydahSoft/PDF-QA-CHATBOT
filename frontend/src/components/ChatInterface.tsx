@@ -10,9 +10,10 @@ interface Message {
 
 interface ChatInterfaceProps {
     mode?: 'local' | 'drive';
+    initialSuggestions?: string[];
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode = 'local' }) => {
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode = 'local', initialSuggestions = [] }) => {
     const [messages, setMessages] = useState<Message[]>([
         {
             role: 'bot',
@@ -23,7 +24,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode = 'local' }) => {
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [suggestions, setSuggestions] = useState<string[]>([]);
+    const [suggestions, setSuggestions] = useState<string[]>(initialSuggestions);
     const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {

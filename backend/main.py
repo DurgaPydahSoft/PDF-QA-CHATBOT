@@ -100,10 +100,14 @@ async def upload_pdf(files: List[UploadFile] = File(...)):
             print(f"Error processing {file.filename}: {e}")
             continue
     
+    # Generate initial suggestions
+    suggestions = local_agent.get_initial_suggestions()
+
     return {
         "message": f"Successfully processed {len(processed_files)} files locally.",
         "files": processed_files,
-        "chunks": total_chunks
+        "chunks": total_chunks,
+        "suggestions": suggestions
     }
 
 @app.post("/ask")

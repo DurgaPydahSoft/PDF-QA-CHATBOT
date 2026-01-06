@@ -11,9 +11,11 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'local' | 'drive'>('local');
   const [isUploaded, setIsUploaded] = useState(false);
   const [chunksCount, setChunksCount] = useState(0);
+  const [initialSuggestions, setInitialSuggestions] = useState<string[]>([]);
 
-  const handleUploadSuccess = (chunks: number) => {
+  const handleUploadSuccess = (chunks: number, suggestions: string[]) => {
     setChunksCount(chunks);
+    setInitialSuggestions(suggestions);
     setIsUploaded(true);
   };
 
@@ -110,7 +112,7 @@ const App: React.FC = () => {
                             <span>Indexed: {chunksCount} document chunks</span>
                           </motion.div>
                         </div>
-                        <ChatInterface mode="local" />
+                        <ChatInterface mode="local" initialSuggestions={initialSuggestions} />
                         <div className="text-center mt-10">
                           <button
                             onClick={() => setIsUploaded(false)}

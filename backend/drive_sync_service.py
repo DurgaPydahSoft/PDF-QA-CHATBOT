@@ -104,11 +104,6 @@ class DriveSyncService:
                 sanitized_pk = pk.replace('\\n', '\n').strip()
                 creds_info['private_key'] = sanitized_pk
                 
-                # Debug logging
-                print(f"DEBUG: Credentials loaded for {creds_info.get('client_email')}")
-                print(f"DEBUG: Project ID: {creds_info.get('project_id')}")
-                print(f"DEBUG: Private Key ID: {creds_info.get('private_key_id', 'Missing')}")
-                
             creds = service_account.Credentials.from_service_account_info(
                 creds_info,
                 scopes=['https://www.googleapis.com/auth/drive.readonly']
