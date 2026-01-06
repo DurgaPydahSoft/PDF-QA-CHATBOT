@@ -1,16 +1,28 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, User, Bot, RefreshCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { askQuestion } from '../services/api';
+import { askQuestion, askDriveQuestion } from '../services/api';
 
 interface Message {
     role: 'user' | 'bot';
     content: string;
 }
 
-const ChatInterface: React.FC = () => {
+interface ChatInterfaceProps {
+    mode?: 'local' | 'drive';
+    onSync?: () => Promise<void>;
+    syncStatus?: any;
+    isSyncing?: boolean;
+}
+
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode = 'local', onSync, syncStatus, isSyncing: externalIsSyncing }) => {
     const [messages, setMessages] = useState<Message[]>([
-        { role: 'bot', content: "I have knowledge of your document now! Feel free to ask me any questions you have. 📚✨" }
+        {
+            role: 'bot',
+            content: mode === 'local'
+                ? "I have knowledge of your document now! Feel free to ask me any questions you have. 📚✨"
+                : "I am connected to your Google Drive archive! How can I help you today? ☁️🤖"
+        }
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -34,8 +46,10 @@ const ChatInterface: React.FC = () => {
         setIsLoading(true);
 
         try {
-            const data = await askQuestion(messageToSend);
+            const apiCall = mode === 'drive' ? askDriveQuestion : askQuestion;
+            const data = await apiCall(messageToSend);
             const fullResponse = data.answer;
+            // ... (rest of the logic remains same)
 
             // Extract suggestions if present
             const parts = fullResponse.split(/Suggestions:/i);
@@ -69,19 +83,39 @@ const ChatInterface: React.FC = () => {
                     </div>
                     <div>
                         <h3 style={{ fontWeight: 'bold', margin: 0 }}>AI Assistant</h3>
-                        <p style={{ fontSize: '0.75rem', color: '#22c55e', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 500 }}>
-                            <span style={{ width: '6px', height: '6px', background: '#22c55e', borderRadius: '50%' }} />
-                            Online
+                        <p style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#22c55e' }}>
+                                <span style={{ width: '6px', height: '6px', background: '#22c55e', borderRadius: '50%' }} />
+                                Online
+                            </span>
+                            {mode === 'drive' && syncStatus && (
+                                <span style={{ borderLeft: '1px solid #e2e8f0', paddingLeft: '0.5rem' }}>
+                                    {syncStatus.total_chunks || 0} chunks indexed
+                                </span>
+                            )}
                         </p>
                     </div>
                 </div>
-                <button
-                    onClick={() => { setMessages([]); setSuggestions([]); }}
-                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.5rem', borderRadius: '0.5rem', display: 'flex', alignItems: 'center' }}
-                    title="Clear Chat"
-                >
-                    <RefreshCcw size={20} color="#64748b" />
-                </button>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    {mode === 'drive' && onSync && (
+                        <button
+                            onClick={onSync}
+                            disabled={externalIsSyncing}
+                            className={`header-action-btn ${externalIsSyncing ? 'is-loading' : ''}`}
+                            title="Sync Drive Now"
+                        >
+                            <RefreshCcw size={18} className={externalIsSyncing ? 'spin' : ''} />
+                            <span className="btn-label">Sync</span>
+                        </button>
+                    )}
+                    <button
+                        onClick={() => { setMessages([]); setSuggestions([]); }}
+                        className="header-action-btn"
+                        title="Clear Chat"
+                    >
+                        <RefreshCcw size={18} color="#64748b" />
+                    </button>
+                </div>
             </div>
 
             {/* Messages */}

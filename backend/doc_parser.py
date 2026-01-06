@@ -53,7 +53,9 @@ def extract_text_from_pptx(file_stream) -> str:
     return text.strip()
 
 def extract_text(file_content: bytes, filename: str) -> str:
-    ext = filename.split('.')[-1].lower()
+    import os
+    _, ext = os.path.splitext(filename.lower())
+    ext = ext.lstrip('.')
     file_stream = io.BytesIO(file_content)
     
     if ext == 'pdf':
@@ -64,6 +66,11 @@ def extract_text(file_content: bytes, filename: str) -> str:
         return extract_text_from_xlsx(file_stream)
     elif ext == 'pptx':
         return extract_text_from_pptx(file_stream)
+    elif ext == 'txt':
+        try:
+            return file_content.decode('utf-8')
+        except:
+            return file_content.decode('latin-1')
     else:
-        print(f"Unsupported file extension: {ext}")
+        print(f"Unsupported file extension for '{filename}': {ext}")
         return ""

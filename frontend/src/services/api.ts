@@ -15,3 +15,25 @@ export const askQuestion = async (question: string) => {
     const response = await axios.post(`${API_BASE_URL}/ask`, { question });
     return response.data;
 };
+
+// --- Google Drive API ---
+
+export const getDriveStatus = async () => {
+    const response = await axios.get(`${API_BASE_URL}/drive/status`);
+    return response.data;
+};
+
+export const updateDriveConfig = async (folderId: string) => {
+    const response = await axios.post(`${API_BASE_URL}/drive/config`, { folder_id: folderId });
+    return response.data;
+};
+
+export const syncDriveNow = async () => {
+    const response = await axios.post(`${API_BASE_URL}/drive/sync-now`);
+    return response.data;
+};
+
+export const askDriveQuestion = async (question: string) => {
+    const response = await axios.post(`${API_BASE_URL}/drive/ask`, { question });
+    return response.data;
+};

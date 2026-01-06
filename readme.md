@@ -49,16 +49,25 @@ The solution ensures that answers are **grounded strictly in the uploaded PDF**,
 
 ## 4. System Architecture
 
-### High-Level Architecture
-
-```
 User (Browser)
    ↓
-Next.js Frontend
+Next.js Frontend (Dual-Tab Interface)
    ↓
 FastAPI Backend
    ↓
-PDF Processing & Vector Store (FAISS)
+┌───────────────────────┴───────────────────────┐
+│                                               │
+In-Memory PDF Processing               Google Drive Sync Service
+(FAISS - Local Tab)                   (Background Polling)
+│                                               │
+└───────────────────────┬───────────────────────┘
+   ↓
+┌───────────────────────┴───────────────────────┐
+│                                               │
+Local In-Memory Vector Store         MongoDB Atlas Vector Search
+(FAISS - Volatile)                 (Cloud Store - Persistent)
+│                                               │
+└───────────────────────┬───────────────────────┘
    ↓
 LLM via OpenRouter
    ↓
@@ -89,34 +98,30 @@ Response to User
 
 ### Storage
 
-* FAISS (Vector Database)
-* Local File System (PDF storage)
-* SQLite (optional metadata storage)
+* **FAISS** (Local Vector Store - In-Memory)
+* **MongoDB Atlas Vector Search** (Cloud-Native Persistent Store)
+* **Google Drive API** (Source for automated document sync)
+* **In-Memory Memory** (io.BytesIO for stateless processing)
 
 ---
 
 ## 6. Functional Requirements
 
 ### PDF Handling
+* **Dual Upload Modes**: 
+    - **Local Upload**: Drag-and-drop files for immediate, temporary chat.
+    - **Drive Sync**: Connect a Google Drive folder for persistent, automated knowledge extraction.
+* Extract text from PDF, DOCX, XLSX, and PPTX formats.
+* Split text into semantic chunks and store in the appropriate vector store.
 
-* Upload PDF files via frontend
-* Extract text from uploaded PDF
-* Split text into semantic chunks
-* Store embeddings in vector database
-
-### Question Answering
-
-* Accept natural language questions
-* Retrieve relevant document chunks
-* Generate accurate answers using LLM
-* Restrict responses to document content only
+### Automated Sync (Google Drive)
+* **Background Monitoring**: Polls a shared Drive folder every 5 minutes.
+* **Incremental Updates**: Detects new or modified files and updates MongoDB Atlas instantly.
+* **Stateless Processing**: Raw files are never saved to disk; they are processed entirely in RAM.
 
 ### User Interface
-
-* PDF upload interface
-* Chat-style question input
-* Real-time answer display
-* Loading & error handling states
+* **Tabbed Experience**: Fast switching between Local and Drive workspaces.
+* **Real-time Status**: Monitor sync progress and database connection health directly from the UI.
 
 ---
 
@@ -148,39 +153,22 @@ Response to User
 
 ---
 
-## 9. Module Description
+### 1. Frontend Module (React/Next.js)
+* Dual-tab navigation system.
+* Dynamic status monitoring for Google Drive sync.
 
-### 1. Frontend Module (Next.js)
+### 2. Google Drive Sync Module
+* Service Account authentication.
+* Background polling thread.
+* Recursive file export (Google Docs/Sheets/Slides to PDF).
 
-* File upload component
-* Chat interface
-* API integration layer
-* UI state management
+### 3. Mongo Vector Store Module
+* High-performance semantic search using MongoDB Atlas.
+* Persistent storage for Drive-sourced document embeddings.
+* Stateless metadata tracking (last modified times).
 
-### 2. PDF Processing Module
-
-* PDF parsing using PyMuPDF/pdfplumber
-* Text cleaning and normalization
-
-### 3. Chunking Module
-
-* Splits text into fixed-size overlapping chunks
-* Improves retrieval accuracy
-
-### 4. Embedding Module
-
-* Converts text chunks into vector embeddings
-* Uses embedding models via OpenRouter or local models
-
-### 5. Vector Store Module
-
-* Stores embeddings using FAISS
-* Performs similarity search
-
-### 6. LLM Integration Module
-
-* Sends prompts and context to OpenRouter
-* Receives and processes model responses
+### 4. Local Vector Store Module
+* Volatile, in-memory FAISS store for quick local uploads.
 
 ---
 
@@ -276,7 +264,21 @@ pdf-qa-agent/
 
 ---
 
-## 16. Conclusion
+## 16. Cloud Infrastructure Setup (New)
+
+### 🔑 Google Drive Integration
+1. **Service Account**: Place `service_account.json` in the `backend/` directory.
+2. **Permission**: Share your target Google Drive folder with the service account email as a "Viewer".
+3. **Environment Variable**: Add `DRIVE_FOLDER_ID=your_full_folder_link_or_id` to your `.env` file in the `backend/` directory.
+
+### 🍃 MongoDB Atlas Vector Search
+1. **Connection**: Add your `MONGODB_URI` to your `.env` file.
+2. **Index**: Create an **Atlas Vector Search** index named `vector_index` on the `drive_knowledge` collection.
+3. **Dimensions**: Use `384` dimensions with `cosine` similarity for the `embedding` field.
+
+---
+
+## 17. Conclusion
 
 This project demonstrates the effective use of **AI, LLMs, and semantic search** to solve a real-world document understanding problem. By combining Python backend services, OpenRouter-based LLMs, and a modern Next.js frontend, the system provides an efficient, scalable, and intelligent solution for PDF-based question answering.
 
