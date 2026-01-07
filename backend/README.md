@@ -29,8 +29,9 @@ This space hosts the FastAPI backend for the PDF-QA-CHATBOT.
 
 4. **Run the Server**:
    ```powershell
-   python main.py
+   python run.py
    ```
+   This entry point (`run.py`) handles the uvicorn server startup with the correct package configuration.
    Or with hot-reload:
    ```powershell
    uvicorn main:app --reload --port 7860

@@ -1,9 +1,9 @@
 import os
-from pdf_parser import extract_text_from_pdf
-from text_chunker import chunk_text
-from embeddings import generate_embeddings
-from vector_store import VectorStore
-from qa_agent import QAAgent
+from app.utils.pdf_parser import extract_text_from_pdf
+from app.utils.text_chunker import chunk_text
+from app.rag.embeddings import generate_embeddings
+from app.rag.vector_store import VectorStore
+from app.rag.agent import QAAgent
 
 def verify_backend():
     print("Testing Backend Modules...")

@@ -5,16 +5,16 @@ from typing import Optional, List
 import json
 
 print("Starting AI-Based PDF Q&A Agent API...")
-from doc_parser import extract_text
-from text_chunker import chunk_text
+from app.utils.doc_parser import extract_text
+from app.utils.text_chunker import chunk_text
 print("Initializing Core Modules...")
-from embeddings import generate_embeddings
-from vector_store import VectorStore
-from qa_agent import QAAgent
-from mongo_vector_store import MongoVectorStore
-from drive_sync_service import DriveSyncService
+from app.rag.embeddings import generate_embeddings
+from app.rag.vector_store import VectorStore
+from app.rag.agent import QAAgent
+from app.rag.mongo_store import MongoVectorStore
+from app.services.drive_sync import DriveSyncService
 from dotenv import load_dotenv
-from tts_service import text_to_speech_base64
+from app.services.tts import text_to_speech_base64
 
 load_dotenv() # Load environment variables from .env
 

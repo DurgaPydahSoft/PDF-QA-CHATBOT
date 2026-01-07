@@ -23,9 +23,9 @@ const App: React.FC = () => {
   const toggleVoice = () => setIsVoiceEnabled(prev => !prev);
 
   return (
-    <div className="min-h-screen flex flex-col items-center relative bg-bg-light dark:bg-bg-dark text-[#1e293b] dark:text-[#f1f5f9] py-16 px-6 lg:py-24">
+    <div className="min-h-screen flex flex-col items-center relative bg-bg-light dark:bg-bg-dark text-slate-800 dark:text-slate-100 py-6 px-4 md:px-6 lg:py-10 selection:bg-primary/20 selection:text-primary-dark">
       {/* Background patterns */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-20">
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-20 dark:opacity-10">
         <div className="absolute rounded-full blur-[100px] top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#38bdf8]" />
         <div className="absolute rounded-full blur-[100px] top-[20%] right-[-5%] w-[30%] h-[50%] bg-[#60a5fa]" />
         <div className="absolute rounded-full blur-[100px] bottom-[-10%] left-[20%] w-[50%] h-[30%] bg-[#818cf8]" />
@@ -38,7 +38,7 @@ const App: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.4 }}
             className="w-full relative z-10"
           >
             <Home onGetStarted={() => setView('app')} />
@@ -48,43 +48,40 @@ const App: React.FC = () => {
             key="app-view"
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4 }}
-            className="relative z-10 w-full max-w-4xl flex flex-col items-center"
+            transition={{ duration: 0.3 }}
+            className="relative z-10 w-full max-w-6xl flex flex-col items-center"
           >
             {/* Top Navigation Bar */}
-            <div className="w-full flex justify-between items-center mb-12">
+            <div className="w-full flex justify-between items-center mb-6 md:mb-8 glass px-4 py-2.5 rounded-2xl">
               <button
                 onClick={() => setView('home')}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/50 dark:bg-white/5 border border-white/20 dark:border-white/10 hover:bg-white/80 dark:hover:bg-white/10 transition-all group font-bold text-sm"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors group font-semibold text-sm"
               >
-                <Bot size={20} className="text-primary group-hover:rotate-12 transition-transform" />
-                <span>Home</span>
+                <Bot size={18} className="text-primary group-hover:rotate-12 transition-transform" />
+                <span className="hidden sm:inline">Back to Home</span>
               </button>
 
-              <div className="flex items-center gap-3">
-                <div className="flex gap-1">
-                  <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
-                  <div className="w-1.5 h-1.5 bg-[#38bdf8] rounded-full animate-pulse [animation-delay:0.2s]" />
-                  <div className="w-1.5 h-1.5 bg-[#7dd3fc] rounded-full animate-pulse [animation-delay:0.4s]" />
-                </div>
-                <span className="text-xs font-bold text-[#64748b] uppercase tracking-widest">Live Session</span>
+              <div className="flex bg-slate-100 dark:bg-slate-800/50 p-1 rounded-xl">
+                <button
+                  className={`py-1.5 px-4 rounded-lg text-xs font-semibold transition-all duration-200 ${activeTab === 'local' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                  onClick={() => setActiveTab('local')}
+                >
+                  Local Files
+                </button>
+                <button
+                  className={`py-1.5 px-4 rounded-lg text-xs font-semibold transition-all duration-200 ${activeTab === 'drive' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                  onClick={() => setActiveTab('drive')}
+                >
+                  Google Drive
+                </button>
               </div>
-            </div>
 
-            {/* Tab Switcher */}
-            <div className="flex gap-2 bg-white/80 dark:bg-[#1e293b]/80 backdrop-blur-md p-1.5 rounded-2xl shadow-sm mb-10 border border-white/20 dark:border-white/10 z-[100] w-fit">
-              <button
-                className={`py-2.5 px-8 md:px-10 rounded-xl border-none transition-all duration-300 font-bold cursor-pointer whitespace-nowrap text-sm ${activeTab === 'local' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-transparent text-[#64748b] hover:bg-black/5 dark:hover:bg-white/5'}`}
-                onClick={() => setActiveTab('local')}
-              >
-                Local Files
-              </button>
-              <button
-                className={`py-2.5 px-8 md:px-10 rounded-xl border-none transition-all duration-300 font-bold cursor-pointer whitespace-nowrap text-sm ${activeTab === 'drive' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-transparent text-[#64748b] hover:bg-black/5 dark:hover:bg-white/5'}`}
-                onClick={() => setActiveTab('drive')}
-              >
-                Google Drive
-              </button>
+              <div className="flex items-center gap-2">
+                <div className="flex gap-1">
+                  <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+                </div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest hidden sm:inline">Online</span>
+              </div>
             </div>
 
             {/* Tab Content */}
@@ -96,41 +93,60 @@ const App: React.FC = () => {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3 }}
+                    transition={{ duration: 0.2 }}
                     className="w-full"
                   >
                     {!isUploaded ? (
-                      <motion.div key="upload" className="w-full">
+                      <motion.div key="upload" className="w-full flex justify-center">
                         <FileUpload onUploadSuccess={handleUploadSuccess} />
                       </motion.div>
                     ) : (
                       <motion.div key="chat" className="flex flex-col items-center w-full">
-                        <div className="flex justify-center mb-8">
-                          <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            className="flex items-center gap-3 bg-green-500/10 text-green-600 dark:text-green-400 px-5 py-2.5 rounded-full text-sm font-bold border border-green-500/20 shadow-sm"
-                          >
-                            <FileCheck size={18} />
-                            <span>Indexed: {chunksCount} document chunks</span>
-                          </motion.div>
-                        </div>
-                        <ChatInterface
-                          mode="local"
-                          initialSuggestions={initialSuggestions}
-                          isVoiceEnabled={isVoiceEnabled}
-                          onToggleVoice={toggleVoice}
-                        />
-                        <div className="text-center mt-10">
+                        <div className="w-full flex justify-end mb-4">
                           <button
                             onClick={() => setIsUploaded(false)}
-                            className="py-3.5 px-8 rounded-2xl border-2 border-primary/20 text-primary font-bold hover:bg-primary/5 hover:border-primary/40 transition-all duration-200 shadow-sm group"
+                            className="text-xs font-semibold text-primary flex items-center gap-1 hover:underline opacity-80 hover:opacity-100 transition-opacity"
                           >
-                            <span className="flex items-center gap-2">
-                              <Upload size={18} className="group-hover:-translate-y-0.5 transition-transform" />
-                              Analyze another document
-                            </span>
+                            <Upload size={14} />
+                            Analyze New File
                           </button>
+                        </div>
+
+                        <div className="w-full flex gap-4 md:gap-6 flex-col md:flex-row h-[80vh] md:h-[calc(100vh-140px)]">
+                          {/* Sidebar Info - Hidden on mobile, simplified on desktop */}
+                          <div className="hidden md:flex flex-col gap-4 w-64 shrink-0">
+                            <div className="glass-card p-4 flex flex-col gap-2">
+                              <div className="flex items-center gap-2 text-primary font-bold text-sm">
+                                <FileCheck size={16} />
+                                <span>Document Status</span>
+                              </div>
+                              <div className="text-2xl font-bold text-slate-700 dark:text-slate-200">
+                                {chunksCount}
+                              </div>
+                              <div className="text-xs text-slate-500">chunks indexed successfully</div>
+                            </div>
+                            <div className="glass-card p-4 flex-1">
+                              <h3 className="font-bold text-sm mb-3 text-slate-700 dark:text-slate-200">Suggested Queries</h3>
+                              <div className="flex flex-col gap-2">
+                                {initialSuggestions.slice(0, 5).map((s, i) => (
+                                  <div key={i} className="text-xs text-slate-600 dark:text-slate-400 p-2 bg-white/50 dark:bg-white/5 rounded-lg border border-white/50 dark:border-white/5">
+                                    {s}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Main Chat Area */}
+                          <div className="flex-1 h-full">
+                            <ChatInterface
+                              mode="local"
+                              initialSuggestions={initialSuggestions}
+                              isVoiceEnabled={isVoiceEnabled}
+                              onToggleVoice={toggleVoice}
+                              compact={true}
+                            />
+                          </div>
                         </div>
                       </motion.div>
                     )}
@@ -141,7 +157,7 @@ const App: React.FC = () => {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3 }}
+                    transition={{ duration: 0.2 }}
                     className="w-full"
                   >
                     <GoogleDriveTab
@@ -156,7 +172,7 @@ const App: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <footer className="mt-24 mb-12 lg:mb-8 text-[#94a3b8] text-sm text-center font-medium">
+      <footer className="mt-8 text-slate-400 text-xs text-center font-medium">
         <p>© 2026 PDF-QA Agent • Built with FastAPI & React</p>
       </footer>
     </div>

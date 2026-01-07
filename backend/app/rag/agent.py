@@ -1,6 +1,6 @@
-from embeddings import generate_embeddings
-from vector_store import VectorStore
-from llm_client import get_llm_response
+from .embeddings import generate_embeddings
+from .vector_store import VectorStore
+from .llm import get_llm_response
 
 class QAAgent:
     def __init__(self, vector_store: VectorStore):

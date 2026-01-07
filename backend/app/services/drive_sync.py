@@ -6,12 +6,12 @@ import threading
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
-from doc_parser import extract_text
-from text_chunker import chunk_text
-from embeddings import generate_embeddings
-from vector_store import VectorStore
+from app.utils.doc_parser import extract_text
+from app.utils.text_chunker import chunk_text
+from app.rag.embeddings import generate_embeddings
+from app.rag.vector_store import VectorStore
 
-from mongo_vector_store import MongoVectorStore
+from app.rag.mongo_store import MongoVectorStore
 
 class DriveSyncService:
     def __init__(self, vector_store: MongoVectorStore, folder_id: str, credentials_path: str = "service_account.json"):
