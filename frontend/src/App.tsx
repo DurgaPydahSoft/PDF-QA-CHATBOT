@@ -12,12 +12,15 @@ const App: React.FC = () => {
   const [isUploaded, setIsUploaded] = useState(false);
   const [chunksCount, setChunksCount] = useState(0);
   const [initialSuggestions, setInitialSuggestions] = useState<string[]>([]);
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
 
   const handleUploadSuccess = (chunks: number, suggestions: string[]) => {
     setChunksCount(chunks);
     setInitialSuggestions(suggestions);
     setIsUploaded(true);
   };
+
+  const toggleVoice = () => setIsVoiceEnabled(prev => !prev);
 
   return (
     <div className="min-h-screen flex flex-col items-center relative bg-bg-light dark:bg-bg-dark text-[#1e293b] dark:text-[#f1f5f9] py-16 px-6 lg:py-24">
@@ -112,7 +115,12 @@ const App: React.FC = () => {
                             <span>Indexed: {chunksCount} document chunks</span>
                           </motion.div>
                         </div>
-                        <ChatInterface mode="local" initialSuggestions={initialSuggestions} />
+                        <ChatInterface
+                          mode="local"
+                          initialSuggestions={initialSuggestions}
+                          isVoiceEnabled={isVoiceEnabled}
+                          onToggleVoice={toggleVoice}
+                        />
                         <div className="text-center mt-10">
                           <button
                             onClick={() => setIsUploaded(false)}
@@ -136,7 +144,10 @@ const App: React.FC = () => {
                     transition={{ duration: 0.3 }}
                     className="w-full"
                   >
-                    <GoogleDriveTab />
+                    <GoogleDriveTab
+                      isVoiceEnabled={isVoiceEnabled}
+                      onToggleVoice={toggleVoice}
+                    />
                   </motion.div>
                 )}
               </AnimatePresence>

@@ -18,6 +18,8 @@ class QAAgent:
         Context:
         {sample_context}
         
+        Recall that the questions should be short and concise (max 10 words).
+        
         Return ONLY the questions, one per line, starting with a number.
         """
         response = get_llm_response(prompt)
@@ -47,21 +49,21 @@ class QAAgent:
         
         # 3. Construct prompt with context
         context = "\n---\n".join([chunk for chunk, dist in relevant_chunks])
-        prompt = f"""You are a warm, friendly, and highly intelligent AI assistant. Your goal is to help the user understand their documents in a conversational way.
+        prompt = f"""You are a professional, sharp, and highly intelligent AI analyst. Your goal is to provide structured and concise insights from the document.
 
 Guidelines:
-- Use a helpful, engaging tone. 
-- Use emojis occasionally to feel more approachable.
-- Answer the question based ONLY on the provided context.
-- If the answer isn't in the context, politely explain that and perhaps suggest what *is* available.
-- If the response is long, use bullet points for readability.
+- **Be Concise**: Get straight to the point. Avoid fluff or filler phrases like "Here is the information you requested".
+- **Structure**: Use clear headers and bullet points for readability.
+- **Tone**: Professional, confident, and helpful.
+- **No Hallucinations**: Answer ONLY based on the provided context.
+- **Formatting**: Use Markdown for headers (#), bold (**), and lists.
 
 Context:
 {context}
 
 Question: {question}
 
-Please provide a clear, conversational answer. At the very end, include a section 'Suggestions:' with exactly 3 relevant follow-up questions for the user.
+Provide a structured answer. At the very end, include a section 'Suggestions:' with exactly 3 short, relevant follow-up questions (maximum 10 words each). Format them as a numbered list (1., 2., 3.).
 
 Answer:"""
 

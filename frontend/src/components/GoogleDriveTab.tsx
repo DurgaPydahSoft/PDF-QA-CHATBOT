@@ -4,7 +4,12 @@ import { getDriveStatus, syncDriveNow } from '../services/api';
 import ChatInterface from './ChatInterface';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export const GoogleDriveTab: React.FC = () => {
+interface GoogleDriveTabProps {
+    isVoiceEnabled: boolean;
+    onToggleVoice: () => void;
+}
+
+export const GoogleDriveTab: React.FC<GoogleDriveTabProps> = ({ isVoiceEnabled, onToggleVoice }) => {
     const [status, setStatus] = useState<any>(null);
     const [folderId, setFolderId] = useState('');
     const [isSyncing, setIsSyncing] = useState(false);
@@ -76,7 +81,11 @@ export const GoogleDriveTab: React.FC = () => {
 
             {/* Chat Section */}
             <section className="w-full relative">
-                <ChatInterface mode="drive" />
+                <ChatInterface
+                    mode="drive"
+                    isVoiceEnabled={isVoiceEnabled}
+                    onToggleVoice={onToggleVoice}
+                />
             </section>
 
             {/* Sync Button (Below Chat) */}

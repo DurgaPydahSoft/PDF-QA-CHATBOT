@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, User, Bot, Trash2 } from 'lucide-react';
+import { Send, User, Bot, Trash2, Mic, Volume2, VolumeX, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { askQuestion, askDriveQuestion } from '../services/api';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Message {
     role: 'user' | 'bot';
@@ -11,9 +13,16 @@ interface Message {
 interface ChatInterfaceProps {
     mode?: 'local' | 'drive';
     initialSuggestions?: string[];
+    isVoiceEnabled: boolean;
+    onToggleVoice: () => void;
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode = 'local', initialSuggestions = [] }) => {
+const ChatInterface: React.FC<ChatInterfaceProps> = ({
+    mode = 'local',
+    initialSuggestions = [],
+    isVoiceEnabled,
+    onToggleVoice
+}) => {
     const [messages, setMessages] = useState<Message[]>([
         {
             role: 'bot',
@@ -25,13 +34,72 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode = 'local', initialSu
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [suggestions, setSuggestions] = useState<string[]>(initialSuggestions);
+    // isVoiceEnabled is now a prop
+    const [isListening, setIsListening] = useState(false);
+
     const scrollRef = useRef<HTMLDivElement>(null);
+    const recognitionRef = useRef<any>(null);
 
     useEffect(() => {
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
     }, [messages]);
+
+    const playAudio = (base64Audio: string) => {
+        try {
+            const audio = new Audio(`data:audio/mp3;base64,${base64Audio}`);
+            audio.play().catch(e => console.error("Audio play failed", e));
+        } catch (e) {
+            console.error("Audio init failed", e);
+        }
+    };
+
+    const startListening = () => {
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+            recognitionRef.current = new SpeechRecognition();
+            recognitionRef.current.continuous = false;
+            recognitionRef.current.interimResults = false;
+            recognitionRef.current.lang = 'en-US';
+
+            recognitionRef.current.onstart = () => setIsListening(true);
+
+            recognitionRef.current.onresult = (event: any) => {
+                const transcript = event.results[0][0].transcript;
+                setInput(transcript);
+                // Optional: Auto-send could be enabled here
+            };
+
+            recognitionRef.current.onerror = (event: any) => {
+                console.error("Speech recognition error", event.error);
+                setIsListening(false);
+            };
+
+            recognitionRef.current.onend = () => {
+                setIsListening(false);
+            };
+
+            recognitionRef.current.start();
+        } else {
+            alert("Your browser does not support voice input. Please use Chrome or Edge.");
+        }
+    };
+
+    const stopListening = () => {
+        if (recognitionRef.current) {
+            recognitionRef.current.stop();
+            setIsListening(false);
+        }
+    };
+
+    const handleMicClick = () => {
+        if (isListening) {
+            stopListening();
+        } else {
+            startListening();
+        }
+    };
 
     const handleSend = async (text: string = input) => {
         const messageToSend = text.trim();
@@ -47,6 +115,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode = 'local', initialSu
             const apiCall = mode === 'drive' ? askDriveQuestion : askQuestion;
             const data = await apiCall(messageToSend);
             const fullResponse = data.answer;
+            const audioBase64 = data.audio_base64;
 
             // Extract suggestions if present
             const parts = fullResponse.split(/Suggestions:/i);
@@ -61,6 +130,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode = 'local', initialSu
 
             setMessages(prev => [...prev, { role: 'bot', content: mainAnswer }]);
             setSuggestions(extractedSuggestions);
+
+            if (isVoiceEnabled && audioBase64) {
+                playAudio(audioBase64);
+            }
         } catch (err: any) {
             console.error(err);
             const detail = err.response?.data?.detail || 'Connection to backend lost.';
@@ -87,7 +160,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode = 'local', initialSu
                         </p>
                     </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
+                    <button
+                        onClick={onToggleVoice}
+                        className={`p-2 rounded-lg transition-all group cursor-pointer ${isVoiceEnabled ? 'bg-primary/10 text-primary' : 'bg-transparent text-[#94a3b8] hover:bg-black/5 dark:hover:bg-white/5'}`}
+                        title={isVoiceEnabled ? "Mute Voice Response" : "Enable Voice Response"}
+                    >
+                        {isVoiceEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+                    </button>
+                    <div className="w-[1px] h-6 bg-black/10 dark:bg-white/10 mx-1" />
                     <button
                         onClick={() => { setMessages([]); setSuggestions([]); }}
                         className="p-2 rounded-lg bg-transparent hover:bg-black/5 dark:hover:bg-white/5 transition-colors group cursor-pointer"
@@ -123,8 +204,27 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode = 'local', initialSu
                             <div className={`w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-primary' : 'bg-[#e2e8f0]'}`}>
                                 {msg.role === 'user' ? <User size={12} className="text-white md:size-[14px]" /> : <Bot size={12} className="text-primary md:size-[14px]" />}
                             </div>
-                            <div className={`py-2.5 px-4 md:py-3 md:px-5 rounded-[1.25rem] text-sm md:text-[0.9375rem] leading-snug md:leading-6 ${msg.role === 'user' ? 'bg-primary text-white rounded-br-none shadow-md' : 'bg-white dark:bg-[#1e293b] border border-black/5 dark:border-white/10 rounded-bl-none shadow-sm dark:text-gray-100'}`}>
-                                {msg.content}
+                            <div className={`py-2.5 px-4 md:py-3 md:px-5 rounded-[1.25rem] text-sm md:text-[0.9375rem] leading-snug md:leading-6 ${msg.role === 'user' ? 'bg-primary text-white rounded-br-none shadow-md' : 'bg-white dark:bg-[#1e293b] border border-black/5 dark:border-white/10 rounded-bl-none shadow-sm dark:text-gray-100'} markdown-content`}>
+                                {msg.role === 'user' ? (
+                                    msg.content
+                                ) : (
+                                    <ReactMarkdown
+                                        remarkPlugins={[remarkGfm]}
+                                        components={{
+                                            ul: ({ node, ...props }: any) => <ul className="list-disc pl-4 mb-2 space-y-1" {...props} />,
+                                            ol: ({ node, ...props }: any) => <ol className="list-decimal pl-4 mb-2 space-y-1" {...props} />,
+                                            li: ({ node, ...props }: any) => <li className="mb-0.5" {...props} />,
+                                            p: ({ node, ...props }: any) => <p className="mb-2 last:mb-0" {...props} />,
+                                            h1: ({ node, ...props }: any) => <h1 className="text-lg font-bold mb-2 mt-1" {...props} />,
+                                            h2: ({ node, ...props }: any) => <h2 className="text-base font-bold mb-2 mt-1" {...props} />,
+                                            h3: ({ node, ...props }: any) => <h3 className="text-sm font-bold mb-1 mt-1" {...props} />,
+                                            strong: ({ node, ...props }: any) => <strong className="font-bold text-primary dark:text-[#38bdf8]" {...props} />,
+                                            code: ({ node, ...props }: any) => <code className="bg-black/10 dark:bg-white/10 px-1 py-0.5 rounded text-xs" {...props} />,
+                                        }}
+                                    >
+                                        {msg.content}
+                                    </ReactMarkdown>
+                                )}
                             </div>
                         </motion.div>
                     ))}
@@ -165,12 +265,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode = 'local', initialSu
             {/* Input Area */}
             <div className="p-4 md:p-6 bg-white dark:bg-[#0f172a] border-t border-black/5 dark:border-white/5">
                 <div className="flex gap-2 md:gap-3 items-center bg-[#f1f5f9] dark:bg-[#1e293b] p-1.5 md:p-2 rounded-[1.25rem]">
+                    <button
+                        onClick={handleMicClick}
+                        className={`w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center cursor-pointer transition-all duration-200 ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-transparent text-[#64748b] hover:bg-black/5 dark:hover:bg-white/5'}`}
+                        title={isListening ? "Stop Listening" : "Start Voice Input"}
+                    >
+                        {isListening ? <Loader2 size={18} className="animate-spin" /> : <Mic size={18} className="md:size-[20px]" />}
+                    </button>
+
                     <input
                         type="text"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                        placeholder="Ask a question..."
+                        placeholder={isListening ? "Listening..." : "Ask a question..."}
                         className="flex-1 bg-transparent border-none p-2 md:p-3 outline-none text-inherit text-sm md:text-[0.9375rem]"
                     />
                     <button

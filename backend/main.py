@@ -14,6 +14,7 @@ from qa_agent import QAAgent
 from mongo_vector_store import MongoVectorStore
 from drive_sync_service import DriveSyncService
 from dotenv import load_dotenv
+from tts_service import text_to_speech_base64
 
 load_dotenv() # Load environment variables from .env
 
@@ -120,7 +121,15 @@ async def ask_question(payload: dict):
     
     try:
         answer = local_agent.ask(question)
-        return {"answer": answer}
+        # answer already computed above
+        
+        # Generate Audio
+        audio_base64 = text_to_speech_base64(answer)
+        
+        return {
+            "answer": answer,
+            "audio_base64": audio_base64
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -165,7 +174,15 @@ async def ask_drive_question(payload: dict):
     
     try:
         answer = drive_agent.ask(question)
-        return {"answer": answer}
+        # answer already computed above
+        
+        # Generate Audio
+        audio_base64 = text_to_speech_base64(answer)
+        
+        return {
+            "answer": answer,
+            "audio_base64": audio_base64
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
