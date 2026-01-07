@@ -68,7 +68,14 @@ Provide a structured answer. At the very end, include a section 'Suggestions:' w
 Answer:"""
 
         # 4. Get response from LLM
-        return get_llm_response(prompt)
+        response = get_llm_response(prompt)
+        
+        # Clean up response to remove potential trailing asterisks or whitespace
+        response = response.strip()
+        if response.endswith("**"):
+            response = response[:-2].strip()
+            
+        return response
 
 if __name__ == "__main__":
     # Mock test
