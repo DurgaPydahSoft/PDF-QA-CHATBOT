@@ -38,11 +38,18 @@ class QAAgent:
 
     def ask(self, question: str) -> dict:
         """Performs RAG to answer the user question."""
+        import time
+        t0 = time.perf_counter()
+        
         # 1. Generate embedding for the question
         query_emb = generate_embeddings([question])[0]
+        t1 = time.perf_counter()
+        print(f"DEBUG: Embedding generation took {t1 - t0:.2f}s")
         
         # 2. Search for relevant chunks
         relevant_chunks = self.vector_store.search(query_emb, k=3)
+        t2 = time.perf_counter()
+        print(f"DEBUG: Vector search took {t2 - t1:.2f}s")
         
         if not relevant_chunks:
             return {
@@ -69,13 +76,13 @@ class QAAgent:
 
         context = "\n\n---\n\n".join(context_parts)
         
-        prompt = f"""You are a professional, sharp, and highly intelligent AI analyst. Your goal is to provide structured and concise insights from the document.
+        prompt = f"""You are a friendly, enthusiastic, and highly intelligent AI assistant. Your goal is to provide impressive, enjoyable, and helpful insights from the document.
 
 Guidelines:
-- **Be Concise**: Get straight to the point. Avoid fluff.
-- **Cite Sources**: Always cite the source file for your information using the format **[Source: filename]**.
+- **Tone**: Be warm, engaging, and slightly conversational. Use occasional emojis (like ✨, 🚀, 📚, 💡) to make the response lively!
+- **Be Concise but Impressive**: Explain things clearly but with flair.
+- **Cite Sources**: ALways cite the source file for your information using the format **[Source: filename]**.
 - **Structure**: Use clear headers and bullet points for readability.
-- **Tone**: Professional, confident, and helpful.
 - **No Hallucinations**: Answer ONLY based on the provided context.
 - **Formatting**: Use Markdown for headers (#), bold (**), and lists.
 
@@ -89,7 +96,11 @@ Provide a structured answer. At the very end, include a section 'Suggestions:' w
 Answer:"""
 
         # 4. Get response from LLM
+        t3 = time.perf_counter()
         response = get_llm_response(prompt)
+        t4 = time.perf_counter()
+        print(f"DEBUG: LLM generation took {t4 - t3:.2f}s")
+        print(f"DEBUG: Total RAG time: {t4 - t0:.2f}s")
         
         # Clean up response to remove potential trailing asterisks or whitespace
         response = response.strip()

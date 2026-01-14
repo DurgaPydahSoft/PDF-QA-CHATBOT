@@ -124,13 +124,9 @@ async def ask_question(payload: dict):
         answer = agent_result["answer"]
         sources = agent_result["sources"]
         
-        # Generate Audio
-        audio_base64 = text_to_speech_base64(answer)
-        
         return {
             "answer": answer,
-            "sources": sources,
-            "audio_base64": audio_base64
+            "sources": sources
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -175,13 +171,9 @@ async def ask_drive_question(payload: dict):
         answer = agent_result["answer"]
         sources = agent_result["sources"]
         
-        # Generate Audio
-        audio_base64 = text_to_speech_base64(answer)
-        
         return {
             "answer": answer,
-            "sources": sources,
-            "audio_base64": audio_base64
+            "sources": sources
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -192,6 +184,22 @@ async def trigger_sync(background_tasks: BackgroundTasks):
         raise HTTPException(status_code=400, detail="No folder configured.")
     background_tasks.add_task(drive_sync.sync_now)
     return {"message": "Sync triggered in background."}
+
+# --- AUDIO GENERATION ENDPOINT ---
+from pydantic import BaseModel
+class TTSRequest(BaseModel):
+    text: str
+
+@app.post("/generate-audio")
+async def generate_audio_endpoint(payload: TTSRequest):
+    try:
+        import time
+        t_tts_start = time.perf_counter()
+        audio_base64 = text_to_speech_base64(payload.text)
+        print(f"DEBUG: TTS generation took {time.perf_counter() - t_tts_start:.2f}s")
+        return {"audio_base64": audio_base64}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn

@@ -37,3 +37,8 @@ export const askDriveQuestion = async (question: string) => {
     const response = await axios.post(`${API_BASE_URL}/drive/ask`, { question });
     return response.data;
 };
+
+export const generateAudio = async (text: string) => {
+    const response = await axios.post(`${API_BASE_URL}/generate-audio`, { text });
+    return response.data;
+};

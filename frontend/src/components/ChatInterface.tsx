@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, User, Bot, Trash2, Mic, Loader2, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { askQuestion, askDriveQuestion } from '../services/api';
+import { askQuestion, askDriveQuestion, generateAudio } from '../services/api';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -117,7 +117,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             const apiCall = mode === 'drive' ? askDriveQuestion : askQuestion;
             const data = await apiCall(messageToSend);
             const fullResponse = data.answer;
-            const audioBase64 = data.audio_base64;
 
             // Extract suggestions if present
             const parts = fullResponse.split(/Suggestions:/i);
@@ -136,8 +135,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             setMessages(prev => [...prev, { role: 'bot', content: mainAnswer, sources: data.sources }]);
             setSuggestions(extractedSuggestions);
 
-            if (isVoiceEnabled && audioBase64) {
-                playAudio(audioBase64);
+            if (isVoiceEnabled) {
+                // Async TTS fetch
+                generateAudio(mainAnswer)
+                    .then(res => {
+                        if (res.audio_base64) playAudio(res.audio_base64);
+                    })
+                    .catch(e => console.error("TTS Error:", e));
             }
         } catch (err: any) {
             console.error(err);
