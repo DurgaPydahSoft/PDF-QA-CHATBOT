@@ -42,13 +42,14 @@ class MongoVectorStore:
             {
                 "$project": {
                     "text": 1,
+                    "metadata": 1,
                     "score": {"$meta": "vectorSearchScore"}
                 }
             }
         ]
         
         results = list(self.collection.aggregate(pipeline))
-        return [(res["text"], res["score"]) for res in results]
+        return [(res["text"], res["score"], res.get("metadata", {})) for res in results]
 
     def clear(self):
         """Clears the collection."""

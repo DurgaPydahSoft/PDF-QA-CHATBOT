@@ -7,17 +7,25 @@ class VectorStore:
     def __init__(self, dimension: int = 384): # Default for all-MiniLM-L6-v2
         self.dimension = dimension
         self.index = faiss.IndexFlatL2(dimension)
+        self.index = faiss.IndexFlatL2(dimension)
         self.chunks = []
+        self.metadata = []
 
-    def add_texts(self, texts: List[str], embeddings: np.ndarray):
+    def add_texts(self, texts: List[str], embeddings: np.ndarray, metadata: List[dict] = None):
         """Adds texts and their corresponding embeddings to the index."""
         if len(texts) != len(embeddings):
             raise ValueError("Texts and embeddings must have the same length.")
         
         self.index.add(embeddings.astype('float32'))
+        self.index.add(embeddings.astype('float32'))
         self.chunks.extend(texts)
+        if metadata:
+            self.metadata.extend(metadata)
+        else:
+            # If no metadata provided, extend with empty dicts to keep alignment
+            self.metadata.extend([{} for _ in texts])
 
-    def search(self, query_embedding: np.ndarray, k: int = 5) -> List[Tuple[str, float]]:
+    def search(self, query_embedding: np.ndarray, k: int = 5) -> List[Tuple[str, float, dict]]:
         """Searches for the k most similar chunks to the query embedding."""
         if self.index.ntotal == 0:
             return []
@@ -28,7 +36,9 @@ class VectorStore:
         for i in range(len(indices[0])):
             idx = indices[0][i]
             if idx != -1:
-                results.append((self.chunks[idx], float(distances[0][i])))
+                # Return tuple of (text, distance, metadata)
+                meta = self.metadata[idx] if idx < len(self.metadata) else {}
+                results.append((self.chunks[idx], float(distances[0][i]), meta))
                 
         return results
 

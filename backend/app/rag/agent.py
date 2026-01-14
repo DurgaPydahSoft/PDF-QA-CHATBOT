@@ -36,7 +36,7 @@ class QAAgent:
                 
         return suggestions[:3]
 
-    def ask(self, question: str) -> str:
+    def ask(self, question: str) -> dict:
         """Performs RAG to answer the user question."""
         # 1. Generate embedding for the question
         query_emb = generate_embeddings([question])[0]
@@ -45,14 +45,35 @@ class QAAgent:
         relevant_chunks = self.vector_store.search(query_emb, k=3)
         
         if not relevant_chunks:
-            return "👋 I'm sorry, but I couldn't find any specific information in the documents to answer that. Could you try rephrasing or asking something else? I'm here to help! 😊"
+            return {
+                "answer": "👋 I'm sorry, but I couldn't find any specific information in the documents to answer that. Could you try rephrasing or asking something else? I'm here to help! 😊",
+                "sources": []
+            }
         
         # 3. Construct prompt with context
-        context = "\n---\n".join([chunk for chunk, dist in relevant_chunks])
+        # Extract text and metadata from chunks
+        context_parts = []
+        sources_set = set()
+        
+        for chunk_tuple in relevant_chunks:
+            # Handle potential unpacking issues if tuple size varies
+            if len(chunk_tuple) == 3:
+                text, score, meta = chunk_tuple
+                source = meta.get('file_name', 'Unknown File')
+                if source != 'Unknown File':
+                    sources_set.add(source)
+                context_parts.append(f"[Source: {source}]\n{text}")
+            else:
+                text, score = chunk_tuple
+                context_parts.append(f"[Source: Unknown]\n{text}")
+
+        context = "\n\n---\n\n".join(context_parts)
+        
         prompt = f"""You are a professional, sharp, and highly intelligent AI analyst. Your goal is to provide structured and concise insights from the document.
 
 Guidelines:
-- **Be Concise**: Get straight to the point. Avoid fluff or filler phrases like "Here is the information you requested".
+- **Be Concise**: Get straight to the point. Avoid fluff.
+- **Cite Sources**: Always cite the source file for your information using the format **[Source: filename]**.
 - **Structure**: Use clear headers and bullet points for readability.
 - **Tone**: Professional, confident, and helpful.
 - **No Hallucinations**: Answer ONLY based on the provided context.
@@ -72,10 +93,39 @@ Answer:"""
         
         # Clean up response to remove potential trailing asterisks or whitespace
         response = response.strip()
-        if response.endswith("**"):
-            response = response[:-2].strip()
+        # Remove trailing markdown bold markers often left by LLM
+        while response.endswith("**"):
+            response = response[:-2].rstrip()
             
-        return response
+        # Also handle cases where it ends with **. or ** (space)
+        # Also handle cases where it ends with **. or ** (space)
+        if response.endswith("**."):
+            response = response[:-3].strip() + "."
+            
+        # Extract sources actually cited by the LLM
+        import re
+        cited_sources = re.findall(r'\[Source:\s*(.*?)\]', response)
+        # Clean up any potential markdown artifacts from the captured group
+        clean_cited_sources = []
+        for src in cited_sources:
+            # Remove bold markers if they were captured inside (unlikely but safe)
+            clean = src.replace('**', '').strip()
+            if clean and clean != 'Unknown': 
+                clean_cited_sources.append(clean)
+        
+        final_sources = list(set(clean_cited_sources))
+        
+        # Fallback: If LLM didn't cite anything, show all headers? 
+        # Or better: if it cites, show ONLY those. If not, show all candidates.
+        if not final_sources:
+            final_sources = list(sources_set)
+            
+        return {
+            "answer": response,
+            "sources": final_sources
+        }
+            
+
 
 if __name__ == "__main__":
     # Mock test

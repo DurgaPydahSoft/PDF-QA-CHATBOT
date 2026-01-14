@@ -120,14 +120,16 @@ async def ask_question(payload: dict):
         raise HTTPException(status_code=400, detail="No local documents uploaded.")
     
     try:
-        answer = local_agent.ask(question)
-        # answer already computed above
+        agent_result = local_agent.ask(question)
+        answer = agent_result["answer"]
+        sources = agent_result["sources"]
         
         # Generate Audio
         audio_base64 = text_to_speech_base64(answer)
         
         return {
             "answer": answer,
+            "sources": sources,
             "audio_base64": audio_base64
         }
     except Exception as e:
@@ -163,24 +165,22 @@ async def get_drive_status():
 @app.post("/drive/config")
 async def update_drive_config(payload: dict):
     return {"message": "Folder is hardcoded in the backend. Change ignored."}
-
 @app.post("/drive/ask")
 async def ask_drive_question(payload: dict):
     question = payload.get("question")
     if not question: raise HTTPException(status_code=400, detail="Question is required.")
     
-    # MongoDB existence check is enough
-    # We don't necessarily need to check local chunks array anymore
-    
     try:
-        answer = drive_agent.ask(question)
-        # answer already computed above
+        agent_result = drive_agent.ask(question)
+        answer = agent_result["answer"]
+        sources = agent_result["sources"]
         
         # Generate Audio
         audio_base64 = text_to_speech_base64(answer)
         
         return {
             "answer": answer,
+            "sources": sources,
             "audio_base64": audio_base64
         }
     except Exception as e:

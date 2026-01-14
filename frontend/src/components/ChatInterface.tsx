@@ -8,6 +8,7 @@ import remarkGfm from 'remark-gfm';
 interface Message {
     role: 'user' | 'bot';
     content: string;
+    sources?: string[];
 }
 
 interface ChatInterfaceProps {
@@ -120,7 +121,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
             // Extract suggestions if present
             const parts = fullResponse.split(/Suggestions:/i);
-            const mainAnswer = parts[0].trim();
+            let mainAnswer = parts[0].trim();
+
+            // Cleanup: Remove trailing ** which acts as a separator in some LLM outputs
+            mainAnswer = mainAnswer.replace(/\*\*+$/, '').trim();
             const suggestionPart = parts[1] || '';
 
             // Parse suggestions (looking for 1. Q, 2. Q etc or just lines)
@@ -129,7 +133,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 .map((s: string) => s.trim())
                 .filter((s: string) => s.length > 5 && s.length < 100);
 
-            setMessages(prev => [...prev, { role: 'bot', content: mainAnswer }]);
+            setMessages(prev => [...prev, { role: 'bot', content: mainAnswer, sources: data.sources }]);
             setSuggestions(extractedSuggestions);
 
             if (isVoiceEnabled && audioBase64) {
@@ -222,7 +226,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                         }}
                                     >
                                         {msg.content}
+
                                     </ReactMarkdown>
+                                )}
+                                {msg.sources && msg.sources.length > 0 && (
+                                    <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-700/50 flex flex-wrap gap-1 items-center">
+                                        <span className="text-[10px] text-slate-400 font-bold mr-1 uppercase tracking-wider">References:</span>
+                                        {msg.sources.map((src, i) => (
+                                            <span key={i} className="text-[10px] bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 px-1.5 py-0.5 rounded-md font-medium border border-indigo-100 dark:border-indigo-800/50 flex items-center gap-1">
+                                                <span className="w-1 h-1 rounded-full bg-indigo-400"></span>
+                                                {src}
+                                            </span>
+                                        ))}
+                                    </div>
                                 )}
                             </div>
                         </motion.div>
@@ -244,25 +260,27 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             </div>
 
             {/* Suggestions (Horizontal Scroll) */}
-            {!isLoading && suggestions.length > 0 && (
-                <div className="px-4 pb-2 border-t border-transparent">
-                    <motion.div
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="flex flex-wrap gap-2 py-2"
-                    >
-                        {suggestions.map((suggestion, i) => (
-                            <button
-                                key={i}
-                                onClick={() => handleSend(suggestion)}
-                                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 py-1.5 px-3 rounded-xl text-xs font-medium cursor-pointer transition-all hover:border-primary hover:text-primary hover:bg-primary/5 text-left shadow-sm"
-                            >
-                                {suggestion}
-                            </button>
-                        ))}
-                    </motion.div>
-                </div>
-            )}
+            {
+                !isLoading && suggestions.length > 0 && (
+                    <div className="px-4 pb-2 border-t border-transparent">
+                        <motion.div
+                            initial={{ opacity: 0, y: 5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="flex flex-wrap gap-2 py-2"
+                        >
+                            {suggestions.map((suggestion, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => handleSend(suggestion)}
+                                    className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 py-1.5 px-3 rounded-xl text-xs font-medium cursor-pointer transition-all hover:border-primary hover:text-primary hover:bg-primary/5 text-left shadow-sm"
+                                >
+                                    {suggestion}
+                                </button>
+                            ))}
+                        </motion.div>
+                    </div>
+                )
+            }
 
             {/* Input Area */}
             <div className="p-3 md:p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
@@ -292,7 +310,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     </button>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 

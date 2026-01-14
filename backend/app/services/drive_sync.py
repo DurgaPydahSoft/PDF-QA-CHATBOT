@@ -152,6 +152,20 @@ class DriveSyncService:
                         chunk_metadata = [{"file_id": file_id, "file_name": file['name'], "modified_time": modified_time} for _ in chunks]
                         self.vector_store.add_texts(chunks, embeddings, metadata=chunk_metadata)
                         new_files_count += 1
+        
+        # --- DELETION LOGIC ---
+        # Identify files present in DB but missing from current Drive list
+        current_drive_ids = {f['id'] for f in files}
+        existing_db_ids = set(processed_files.keys())
+        
+        files_to_delete = existing_db_ids - current_drive_ids
+        
+        for file_id in files_to_delete:
+            print(f"File deleted from Drive. Removing from DB: {file_id}")
+            self.vector_store.delete_by_file_id(file_id)
+            
+        if files_to_delete:
+             print(f"Removed {len(files_to_delete)} orphaned files from MongoDB.")
 
         if new_files_count > 0:
             print(f"Sync complete. Added/Updated {new_files_count} files in MongoDB.")
