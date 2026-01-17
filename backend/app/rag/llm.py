@@ -6,7 +6,7 @@ load_dotenv()
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
-def get_llm_response(prompt: str, model: str = "mistralai/mistral-7b-instruct:free") -> str:
+def get_llm_response(prompt: str, model: str = "mistralai/devstral-2512:free") -> str:
     """Sends a prompt to OpenRouter and returns the LLM response."""
     if not OPENROUTER_API_KEY:
         return "Error: OPENROUTER_API_KEY not found in environment."

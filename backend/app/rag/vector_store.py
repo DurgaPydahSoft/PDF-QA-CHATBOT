@@ -7,7 +7,7 @@ class VectorStore:
     def __init__(self, dimension: int = 384): # Default for all-MiniLM-L6-v2
         self.dimension = dimension
         self.index = faiss.IndexFlatL2(dimension)
-        self.index = faiss.IndexFlatL2(dimension)
+
         self.chunks = []
         self.metadata = []
 
@@ -17,7 +17,7 @@ class VectorStore:
             raise ValueError("Texts and embeddings must have the same length.")
         
         self.index.add(embeddings.astype('float32'))
-        self.index.add(embeddings.astype('float32'))
+
         self.chunks.extend(texts)
         if metadata:
             self.metadata.extend(metadata)
