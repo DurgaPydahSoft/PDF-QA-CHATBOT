@@ -29,8 +29,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Helper for clean env vars
+def get_clean_env(key: str, default: str = None) -> str:
+    val = os.environ.get(key, default)
+    if val:
+        val = val.strip()
+        if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
+            return val[1:-1]
+    return val
+
 # MongoDB Configuration
-MONGODB_URI = os.environ.get("MONGODB_URI", "your_mongodb_uri_here")
+MONGODB_URI = get_clean_env("MONGODB_URI", "your_mongodb_uri_here")
 
 def extract_folder_id(input_str: str) -> str:
     """Extracts ID if a full Google Drive URL is provided."""
@@ -45,7 +54,7 @@ def extract_folder_id(input_str: str) -> str:
             print(f"Error parsing Drive URL: {e}")
     return input_str
 
-DRIVE_FOLDER_ID = extract_folder_id(os.environ.get("DRIVE_FOLDER_ID", "1867NgaZZAtDLlUI1M1BmM0Od5C_pQYQ"))
+DRIVE_FOLDER_ID = extract_folder_id(get_clean_env("DRIVE_FOLDER_ID", "1867NgaZZAtDLlUI1M1BmM0Od5C_pQYQ"))
 
 # Global instances
 local_vector_store = VectorStore(dimension=384)

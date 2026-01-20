@@ -4,7 +4,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+raw_key = os.getenv("OPENROUTER_API_KEY")
+OPENROUTER_API_KEY = raw_key.strip().strip('"').strip("'") if raw_key else None
 
 def get_llm_response(prompt: str, model: str = "mistralai/devstral-2512:free") -> str:
     """Sends a prompt to OpenRouter and returns the LLM response."""
