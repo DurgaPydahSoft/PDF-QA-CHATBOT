@@ -288,6 +288,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                             h3: ({ node, ...props }: any) => <h3 className="text-sm font-bold mb-1 mt-1" {...props} />,
                                             strong: ({ node, ...props }: any) => <strong className="font-bold text-slate-900 dark:text-slate-100" {...props} />,
                                             code: ({ node, ...props }: any) => <code className="bg-slate-100 dark:bg-slate-900 px-1 py-0.5 rounded text-xs font-mono" {...props} />,
+                                            table: ({ node, ...props }: any) => (
+                                                <div className="overflow-x-auto my-4 rounded-lg border border-slate-200 dark:border-slate-700">
+                                                    <table className="w-full text-left text-sm border-collapse" {...props} />
+                                                </div>
+                                            ),
+                                            thead: ({ node, ...props }: any) => <thead className="bg-slate-50 dark:bg-slate-900/50" {...props} />,
+                                            tbody: ({ node, ...props }: any) => <tbody className="divide-y divide-slate-100 dark:divide-slate-800" {...props} />,
+                                            tr: ({ node, ...props }: any) => <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors" {...props} />,
+                                            th: ({ node, ...props }: any) => <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700 whitespace-nowrap" {...props} />,
+                                            td: ({ node, ...props }: any) => <td className="px-4 py-3 text-slate-600 dark:text-slate-300 align-top" {...props} />,
                                         }}
                                     >
                                         {msg.content}
