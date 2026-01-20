@@ -138,7 +138,9 @@ async def get_drive_status():
     # total_chunks logic is slightly different for MongoDB
     # We can skip expensive count for status if preferred, or use collection.count_documents
     try:
-        count = drive_vector_store.collection.count_documents({})
+        # Get count of unique files using distinct file_ids
+        file_ids = drive_vector_store.collection.distinct("metadata.file_id")
+        count = len(file_ids)
     except:
         count = 0
         
@@ -152,7 +154,7 @@ async def get_drive_status():
         "folder_id": drive_sync.folder_id,
         "is_syncing": drive_sync.is_syncing,
         "last_sync": drive_sync.last_sync_time,
-        "total_chunks": count,
+        "total_files": count,
         "service_account_exists": service_account_available,
         "mongodb_connected": MONGODB_URI != "your_mongodb_uri_here"
     }

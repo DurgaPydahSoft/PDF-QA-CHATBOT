@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, User, Bot, Trash2, Mic, Loader2, Volume2, VolumeX } from 'lucide-react';
+import { Send, User, Bot, Trash2, Mic, Loader2, Volume2, VolumeX, Cloud, RefreshCcw, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { askQuestion, askDriveQuestion, generateAudio } from '../services/api';
 import ReactMarkdown from 'react-markdown';
@@ -11,12 +11,24 @@ interface Message {
     sources?: string[];
 }
 
+export interface DriveStatus {
+    service_account_exists: boolean;
+    mongodb_connected: boolean;
+    total_files: number;
+    folder_id: string;
+    last_sync?: string;
+}
+
 interface ChatInterfaceProps {
     mode?: 'local' | 'drive';
     initialSuggestions?: string[];
     isVoiceEnabled: boolean;
     onToggleVoice: () => void;
     compact?: boolean;
+    // Drive specific props
+    driveStatus?: DriveStatus;
+    isSyncing?: boolean;
+    onSyncDrive?: () => void;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
@@ -24,7 +36,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     initialSuggestions = [],
     isVoiceEnabled,
     onToggleVoice,
-    compact = false
+    compact = false,
+    driveStatus,
+    isSyncing = false,
+    onSyncDrive
 }) => {
     const [messages, setMessages] = useState<Message[]>([
         {
@@ -152,24 +167,69 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         }
     };
 
+    // --- Components ---
+
+    const renderDriveStatus = () => {
+        if (!driveStatus) return null;
+
+        const isError = !driveStatus.service_account_exists || !driveStatus.mongodb_connected;
+
+        if (isError) {
+            return (
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-red-50 text-red-600 rounded-lg text-xs font-bold border border-red-200">
+                    <AlertTriangle size={12} />
+                    <span className="hidden sm:inline">Config Error</span>
+                </div>
+            );
+        }
+
+        return (
+            <div className="flex items-center gap-2">
+                <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-xs font-bold border border-emerald-100">
+                    <Cloud size={12} />
+                    <span>{driveStatus.total_files} files</span>
+                </div>
+                {onSyncDrive && (
+                    <button
+                        onClick={onSyncDrive}
+                        disabled={isSyncing}
+                        className={`p-1.5 rounded-lg transition-all ${isSyncing ? 'bg-primary/10 text-primary' : 'bg-transparent text-slate-400 hover:bg-slate-100 hover:text-primary'}`}
+                        title="Sync with Google Drive"
+                    >
+                        <RefreshCcw size={16} className={`${isSyncing ? 'animate-spin' : ''}`} />
+                    </button>
+                )}
+            </div>
+        );
+    };
+
     return (
-        <div className={`glass-card flex flex-col w-full overflow-hidden ${compact ? 'h-full rounded-2xl' : 'h-[75vh] md:h-[80vh] rounded-[2rem] shadow-card'}`}>
-            <div className={`p-3 md:p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-white/40 dark:bg-slate-900/40 backdrop-blur-sm`}>
+        <div className={`glass-card flex flex-col w-full overflow-hidden ${compact ? 'h-full rounded-2xl' : 'h-[65vh] md:h-[70vh] rounded-2xl shadow-xl border border-slate-200/60 dark:border-slate-700/60'}`}>
+            {/* Header */}
+            <div className="p-3 md:px-4 md:py-3 border-b border-slate-200/60 dark:border-slate-800/60 flex justify-between items-center bg-white/40 dark:bg-slate-900/40 backdrop-blur-md">
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                        <Bot size={18} className="text-primary" />
+                    <div className={`w-8 h-8 ${mode === 'drive' ? 'bg-indigo-500/10 text-indigo-500' : 'bg-primary/10 text-primary'} rounded-xl flex items-center justify-center`}>
+                        {mode === 'drive' ? <Cloud size={18} /> : <Bot size={18} />}
                     </div>
                     <div>
-                        <h3 className="font-bold text-sm text-slate-800 dark:text-white m-0 leading-tight">AI Assistant</h3>
+                        <h3 className="font-bold text-sm text-slate-800 dark:text-white m-0 leading-tight">
+                            {mode === 'drive' ? 'Drive Assistant' : 'PDF Assistant'}
+                        </h3>
                         <p className="text-[10px] text-slate-500 flex items-center gap-1.5 font-medium">
                             <span className="flex items-center gap-1 text-emerald-500">
-                                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+                                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
                                 Online
                             </span>
                         </p>
                     </div>
                 </div>
-                <div className="flex gap-1 items-center">
+
+                <div className="flex gap-2 items-center">
+                    {/* Drive Specific Controls in Header */}
+                    {mode === 'drive' && renderDriveStatus()}
+
+                    <div className="w-[1px] h-4 bg-slate-200 dark:bg-slate-700 mx-1" />
+
                     <button
                         onClick={onToggleVoice}
                         className={`p-1.5 rounded-lg transition-all cursor-pointer ${isVoiceEnabled ? 'bg-primary/10 text-primary' : 'bg-transparent text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
@@ -177,7 +237,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     >
                         {isVoiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
                     </button>
-                    <div className="w-[1px] h-4 bg-slate-200 dark:bg-slate-700 mx-1" />
+
                     <button
                         onClick={() => { setMessages([]); setSuggestions([]); }}
                         className="p-1.5 rounded-lg bg-transparent hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
@@ -189,15 +249,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             </div>
 
             {/* Messages */}
-            <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-3 md:gap-4">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-4 scroll-smooth">
                 {messages.length === 0 && (
                     <div className="flex-1 flex flex-col items-center justify-center text-center p-8 opacity-50">
-                        <Bot size={48} className="text-slate-300 dark:text-slate-600 mb-4" />
+                        {mode === 'drive' ? <Cloud size={48} className="text-slate-300 mb-4" /> : <Bot size={48} className="text-slate-300 mb-4" />}
                         <p className="text-sm text-slate-500">Start a conversation...</p>
                     </div>
                 )}
 
-                <AnimatePresence>
+                <AnimatePresence mode="popLayout">
                     {messages.map((msg, idx) => (
                         <motion.div
                             key={idx}
@@ -205,12 +265,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             className={`flex items-end gap-2 max-w-[95%] text-sm ${msg.role === 'user' ? 'self-end flex-row-reverse' : 'self-start'}`}
                         >
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-700'}`}>
-                                {msg.role === 'user' ? <User size={12} className="text-white" /> : <Bot size={12} className="text-slate-600 dark:text-slate-300" />}
+                            <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 shadow-sm ${msg.role === 'user' ? 'bg-gradient-to-br from-primary to-primary-dark' : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700'}`}>
+                                {msg.role === 'user' ? <User size={14} className="text-white" /> : <Bot size={14} className="text-slate-500 dark:text-slate-400" />}
                             </div>
-                            <div className={`py-2 px-3.5 rounded-2xl leading-relaxed ${msg.role === 'user'
-                                ? 'bg-primary text-white rounded-br-none shadow-sm'
-                                : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-bl-none shadow-sm dark:text-slate-200'
+
+                            <div className={`py-2.5 px-4 rounded-2xl leading-relaxed shadow-sm ${msg.role === 'user'
+                                ? 'bg-primary text-white rounded-br-none shadow-primary/20'
+                                : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700/60 rounded-bl-none dark:text-slate-200'
                                 } markdown-content`}>
                                 {msg.role === 'user' ? (
                                     msg.content
@@ -230,15 +291,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                         }}
                                     >
                                         {msg.content}
-
                                     </ReactMarkdown>
                                 )}
                                 {msg.sources && msg.sources.length > 0 && (
-                                    <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-700/50 flex flex-wrap gap-1 items-center">
-                                        <span className="text-[10px] text-slate-400 font-bold mr-1 uppercase tracking-wider">References:</span>
+                                    <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-700/50 flex flex-wrap gap-1.5 items-center">
+                                        <span className="text-[10px] text-slate-400 font-bold mr-1 uppercase tracking-wider">Ref:</span>
                                         {msg.sources.map((src, i) => (
-                                            <span key={i} className="text-[10px] bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 px-1.5 py-0.5 rounded-md font-medium border border-indigo-100 dark:border-indigo-800/50 flex items-center gap-1">
-                                                <span className="w-1 h-1 rounded-full bg-indigo-400"></span>
+                                            <span key={i} className="text-[10px] bg-white/50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700 flex items-center gap-1 select-all hover:border-primary/30 transition-colors">
                                                 {src}
                                             </span>
                                         ))}
@@ -250,10 +309,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
                     {isLoading && (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-end gap-2 self-start">
-                            <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 bg-slate-200 dark:bg-slate-700">
-                                <Bot size={12} className="text-slate-600 dark:text-slate-300" />
+                            <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 shadow-sm bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+                                <Bot size={14} className="text-slate-500 dark:text-slate-400" />
                             </div>
-                            <div className="py-2 px-4 rounded-2xl bg-slate-100 dark:bg-slate-800 rounded-bl-none flex items-center gap-1">
+                            <div className="py-3 px-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-bl-none flex items-center gap-1.5 shadow-sm">
                                 <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-typing" />
                                 <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-typing [animation-delay:0.2s]" />
                                 <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-typing [animation-delay:0.4s]" />
@@ -276,7 +335,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                 <button
                                     key={i}
                                     onClick={() => handleSend(suggestion)}
-                                    className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 py-1.5 px-3 rounded-xl text-xs font-medium cursor-pointer transition-all hover:border-primary hover:text-primary hover:bg-primary/5 text-left shadow-sm"
+                                    className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 py-1.5 px-3 rounded-full text-xs font-medium cursor-pointer transition-all hover:border-primary hover:text-primary hover:bg-primary/5 text-left shadow-sm"
                                 >
                                     {suggestion}
                                 </button>
@@ -287,14 +346,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             }
 
             {/* Input Area */}
-            <div className="p-3 md:p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
-                <div className="flex gap-2 items-center bg-slate-50 dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10 transition-all">
+            <div className="p-3 md:px-4 md:py-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200 dark:border-slate-800">
+                <div className="flex gap-2 items-center bg-slate-50 dark:bg-slate-800/60 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/10 transition-all shadow-inner">
                     <button
                         onClick={handleMicClick}
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer transition-all duration-200 ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-transparent text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+                        className={`w-9 h-9 rounded-lg flex items-center justify-center cursor-pointer transition-all duration-200 ${isListening ? 'bg-red-500 text-white animate-pulse shadow-md shadow-red-200' : 'bg-transparent text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
                         title={isListening ? "Stop Listening" : "Start Voice Input"}
                     >
-                        {isListening ? <Loader2 size={16} className="animate-spin" /> : <Mic size={16} />}
+                        {isListening ? <Loader2 size={18} className="animate-spin" /> : <Mic size={18} />}
                     </button>
 
                     <input
@@ -303,15 +362,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                         onChange={(e) => setInput(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                         placeholder={isListening ? "Listening..." : "Ask something..."}
-                        className="flex-1 bg-transparent border-none p-1 outline-none text-slate-800 dark:text-slate-200 text-sm placeholder:text-slate-400"
+                        className="flex-1 bg-transparent border-none p-1 outline-none text-slate-800 dark:text-slate-200 text-sm placeholder:text-slate-400 font-medium"
                     />
                     <button
                         onClick={() => handleSend()}
                         disabled={!input.trim() || isLoading}
-                        className={`bg-primary text-white w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer transition-all duration-200 shadow-sm ${input.trim() && !isLoading ? 'opacity-100 scale-100 hover:bg-primary-dark' : 'opacity-50 scale-95 cursor-not-allowed'}`}
+                        className={`bg-primary text-white w-9 h-9 rounded-lg flex items-center justify-center cursor-pointer transition-all duration-200 shadow-md shadow-primary/20 ${input.trim() && !isLoading ? 'opacity-100 scale-100 hover:scale-105 active:scale-95' : 'opacity-50 scale-95 cursor-not-allowed'}`}
                     >
-                        <Send size={14} />
+                        <Send size={16} />
                     </button>
+                </div>
+                <div className="text-[10px] text-center text-slate-300 dark:text-slate-600 mt-2 font-medium">
+                    AI can make mistakes. Check important info.
                 </div>
             </div>
         </div >

@@ -47,7 +47,9 @@ class QAAgent:
         print(f"DEBUG: Embedding generation took {t1 - t0:.2f}s")
         
         # 2. Search for relevant chunks
-        relevant_chunks = self.vector_store.search(query_emb, k=3)
+        # 2. Search for relevant chunks
+        print(f"DEBUG: Total chunks in store: {len(self.vector_store.chunks)}")
+        relevant_chunks = self.vector_store.search(query_emb, k=5)
         t2 = time.perf_counter()
         print(f"DEBUG: Vector search took {t2 - t1:.2f}s")
         

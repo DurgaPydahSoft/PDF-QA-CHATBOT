@@ -7,13 +7,30 @@ import io
 def extract_text_from_pdf(file_stream) -> str:
     text = ""
     try:
-        reader = pypdf.PdfReader(file_stream)
-        for page in reader.pages:
-            page_text = page.extract_text()
-            if page_text:
-                text += page_text + "\n"
+        import fitz  # PyMuPDF
+        # fitz requires a file path or bytes, not a BytesIO object directly for `open`.
+        # But we can pass the stream content as bytes to `open(stream=..., filetype="pdf")`
+        doc = fitz.open(stream=file_stream.read(), filetype="pdf")
+        print(f"DEBUG: PDF has {len(doc)} pages.")
+        for i, page in enumerate(doc):
+            page_text = page.get_text()
+            text += page_text + "\n"
+            if i % 10 == 0:
+                print(f"DEBUG: Parsed page {i+1}, text len so far: {len(text)}")
+        
+        print(f"DEBUG: Final extracted text length: {len(text)}")
+        
     except Exception as e:
-        print(f"Error extracting text from PDF: {e}")
+        print(f"Error extracting text from PDF with PyMuPDF: {e}")
+        # Fallback (optional, but good for safety)
+        try:
+            file_stream.seek(0)
+            reader = pypdf.PdfReader(file_stream)
+            for page in reader.pages:
+                text += page.extract_text() + "\n"
+        except Exception as e2:
+             print(f"Fallback PDF extraction failed: {e2}")
+
     return text.strip()
 
 def extract_text_from_docx(file_stream) -> str:
