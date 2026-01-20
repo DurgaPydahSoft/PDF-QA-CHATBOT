@@ -48,7 +48,8 @@ class QAAgent:
         
         # 2. Search for relevant chunks
         # 2. Search for relevant chunks
-        print(f"DEBUG: Total chunks in store: {len(self.vector_store.chunks)}")
+        if hasattr(self.vector_store, 'chunks'):
+            print(f"DEBUG: Total chunks in store: {len(self.vector_store.chunks)}")
         relevant_chunks = self.vector_store.search(query_emb, k=5)
         t2 = time.perf_counter()
         print(f"DEBUG: Vector search took {t2 - t1:.2f}s")
