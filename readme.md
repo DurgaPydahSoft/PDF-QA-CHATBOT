@@ -28,21 +28,21 @@ A powerful, modern RAG (Retrieval-Augmented Generation) application that allows 
 
 ## 🏗️ Architecture
 
-This project uses a **Hybird RAG** approach to handle both ephemeral local files and persistent cloud data.
+This project uses a **Hybrid RAG** approach to handle both ephemeral local files and persistent cloud data.
 
 ```mermaid
 graph TD
-    A[User Frontend] <-->|Rest API| B[FastAPI Backend]
-    B -->|Upload| C[Doc Parser (PyMuPDF)]
-    C -->|Text| D[Text Chunker]
-    D -->|Chunks| E[Embedding Model (MiniLM)]
-    E -->|Vectors| F{Vector Store}
-    F -->|Ephemeral| G[FAISS (Local RAM)]
-    F -->|Persistent| H[MongoDB Atlas]
+    A["User Frontend"] <-->|Rest API| B["FastAPI Backend"]
+    B -->|Upload| C["Doc Parser (PyMuPDF)"]
+    C -->|Text| D["Text Chunker"]
+    D -->|Chunks| E["Embedding Model (MiniLM)"]
+    E -->|Vectors| F{"Vector Store"}
+    F -->|Ephemeral| G["FAISS (Local RAM)"]
+    F -->|Persistent| H["MongoDB Atlas"]
     
-    B -->|Query| I[RAG Agent]
+    B -->|Query| I["RAG Agent"]
     I -->|Retrieve| F
-    I -->|Context + Prompt| J[LLM (OpenRouter/Mistral)]
+    I -->|Context + Prompt| J["LLM (OpenRouter/Mistral)"]
     J -->|Answer| A
 ```
 
