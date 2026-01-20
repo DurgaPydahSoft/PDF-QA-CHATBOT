@@ -21,6 +21,7 @@ class DriveSyncService:
         self.is_syncing = False
         self.last_sync_time = None
         self.stop_event = threading.Event()
+        self.connection_info = {}
         # Metadata is now handled within MongoVectorStore documents
         
     def start(self):
@@ -112,6 +113,14 @@ class DriveSyncService:
         except Exception as e:
             print(f"Error initializing Google Drive credentials: {e}")
             return
+
+        # Store connection info for frontend display
+        if creds_info:
+            self.connection_info = {
+                "email": creds_info.get("client_email", "Unknown"),
+                "project_id": creds_info.get("project_id", "Unknown"),
+                "scopes": ["Read-Only"]  # We hardcode scopes based on the logic above
+            }
 
         # Get existing metadata from MongoDB
         processed_files = self.vector_store.get_all_metadata()

@@ -55,6 +55,14 @@ class MongoVectorStore:
         """Clears the collection."""
         self.collection.delete_many({})
 
+    def get_file_list(self) -> List[dict]:
+        """Retrieves a list of unique files with their IDs and names."""
+        pipeline = [
+            {"$group": {"_id": "$metadata.file_id", "name": {"$first": "$metadata.file_name"}, "last_modified": {"$max": "$metadata.modified_time"}}}
+        ]
+        results = self.collection.aggregate(pipeline)
+        return [{"id": res["_id"], "name": res.get("name", "Unknown File"), "modified_time": res.get("last_modified")} for res in results if res["_id"]]
+
     def get_all_metadata(self) -> dict:
         """Retrieves all unique file IDs and their modified times from the documents."""
         # Instead of a separate metadata file, we store metadata in each chunk's document.

@@ -148,10 +148,15 @@ async def get_drive_status():
     # We can skip expensive count for status if preferred, or use collection.count_documents
     try:
         # Get count of unique files using distinct file_ids
-        file_ids = drive_vector_store.collection.distinct("metadata.file_id")
-        count = len(file_ids)
+        # file_ids = drive_vector_store.collection.distinct("metadata.file_id")
+        # count = len(file_ids)
+        
+        # New: Get full file list with names
+        files_list = drive_vector_store.get_file_list()
+        count = len(files_list)
     except:
         count = 0
+        files_list = []
         
     service_account_available = (
         os.path.exists("service_account.json") or 
@@ -164,6 +169,8 @@ async def get_drive_status():
         "is_syncing": drive_sync.is_syncing,
         "last_sync": drive_sync.last_sync_time,
         "total_files": count,
+        "files": files_list,
+        "connection_info": drive_sync.connection_info,
         "service_account_exists": service_account_available,
         "mongodb_connected": MONGODB_URI != "your_mongodb_uri_here"
     }
