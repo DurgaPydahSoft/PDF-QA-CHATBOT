@@ -181,11 +181,6 @@ async def get_drive_status():
         MONGODB_URI != "your_mongodb_uri_here"
     )
     
-    # Debug logging (can be removed in production)
-    print(f"DEBUG: service_account_available={service_account_available}, mongodb_connected={mongodb_connected}")
-    print(f"DEBUG: sa_key_b64 exists={sa_key_b64 is not None and sa_key_b64 != ''}")
-    print(f"DEBUG: MONGODB_URI set={mongodb_connected}")
-    
     return {
         "folder_id": drive_sync.folder_id,
         "is_syncing": drive_sync.is_syncing,
