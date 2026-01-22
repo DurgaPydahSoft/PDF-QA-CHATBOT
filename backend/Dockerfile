@@ -17,8 +17,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy only requirements first (for better layer caching in CI/CD)
 COPY requirements.txt .
 
+# Set environment to prevent CUDA downloads (CPU-only)
+ENV TORCH_CUDA_ARCH_LIST="" \
+    BUILD_WITH_CUDA="0"
+
 # Install Python dependencies with pip cache mount for faster rebuilds
+# Force CPU-only PyTorch to reduce download size from ~3GB to ~200MB
 RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --user --no-cache-dir --upgrade pip && \
+    pip install --user --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
     pip install --user --no-cache-dir -r requirements.txt
 
 # Pre-download the embedding model during build (saves startup time)
@@ -47,9 +54,8 @@ COPY --from=builder /root/.local /home/appuser/.local
 COPY app/ ./app/
 COPY run.py .
 
-# Set ownership and permissions
-RUN chown -R appuser:appuser /app && \
-    chown -R appuser:appuser /home/appuser
+# Set ownership and permissions (optimized - set ownership before switching user)
+RUN chown -R appuser:appuser /app /home/appuser
 
 # Make sure scripts in .local are usable
 ENV PATH=/home/appuser/.local/bin:$PATH

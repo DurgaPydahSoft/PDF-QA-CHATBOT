@@ -1,18 +1,29 @@
+# Core framework
 fastapi
 uvicorn
+
+# Document parsing
 pypdf
 python-docx
 openpyxl
 python-pptx
+PyMuPDF>=1.23.0
+
+# ML/AI - torch installed separately as CPU-only in Dockerfile
 sentence-transformers
 faiss-cpu
+
+# Utilities
 requests
 python-dotenv
 python-multipart
+gTTS==2.5.1
+
+# Google Drive integration
 google-api-python-client
 google-auth
 google-auth-httplib2
 google-auth-oauthlib
+
+# Database
 pymongo
-PyMuPDF>=1.23.0
-gTTS==2.5.1
