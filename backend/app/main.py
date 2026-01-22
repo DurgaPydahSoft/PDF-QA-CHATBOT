@@ -160,13 +160,32 @@ async def get_drive_status():
         
     # Check for service account credentials in all supported formats
     # Uses get_clean_env to handle quoted values (consistent with drive_sync.py)
+    # Check for non-empty values (not just None) to handle empty strings
+    sa_key_b64 = get_clean_env("GOOGLE_SA_KEY_BASE64")
+    sa_json = get_clean_env("GOOGLE_SERVICE_ACCOUNT_JSON")
+    sa_private_key = get_clean_env("GOOGLE_PRIVATE_KEY")
+    sa_client_email = get_clean_env("GOOGLE_CLIENT_EMAIL")
+    
     service_account_available = (
         os.path.exists("service_account.json") or 
-        get_clean_env("GOOGLE_SA_KEY_BASE64") is not None or  # Base64-encoded (production)
-        get_clean_env("GOOGLE_SERVICE_ACCOUNT_JSON") is not None or  # Raw JSON string
-        (get_clean_env("GOOGLE_PRIVATE_KEY") is not None and get_clean_env("GOOGLE_CLIENT_EMAIL") is not None)  # Individual env vars
+        (sa_key_b64 is not None and sa_key_b64 != "") or  # Base64-encoded (production)
+        (sa_json is not None and sa_json != "") or  # Raw JSON string
+        (sa_private_key is not None and sa_private_key != "" and 
+         sa_client_email is not None and sa_client_email != "")  # Individual env vars
     )
 
+    # Check MongoDB connection more robustly
+    mongodb_connected = (
+        MONGODB_URI is not None and 
+        MONGODB_URI != "" and 
+        MONGODB_URI != "your_mongodb_uri_here"
+    )
+    
+    # Debug logging (can be removed in production)
+    print(f"DEBUG: service_account_available={service_account_available}, mongodb_connected={mongodb_connected}")
+    print(f"DEBUG: sa_key_b64 exists={sa_key_b64 is not None and sa_key_b64 != ''}")
+    print(f"DEBUG: MONGODB_URI set={mongodb_connected}")
+    
     return {
         "folder_id": drive_sync.folder_id,
         "is_syncing": drive_sync.is_syncing,
@@ -175,7 +194,7 @@ async def get_drive_status():
         "files": files_list,
         "connection_info": drive_sync.connection_info,
         "service_account_exists": service_account_available,
-        "mongodb_connected": MONGODB_URI != "your_mongodb_uri_here"
+        "mongodb_connected": mongodb_connected
     }
 
 # Config endpoint is no longer needed but kept as stub to avoid front-end breakage
