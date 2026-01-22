@@ -158,10 +158,13 @@ async def get_drive_status():
         count = 0
         files_list = []
         
+    # Check for service account credentials in all supported formats
+    # Uses get_clean_env to handle quoted values (consistent with drive_sync.py)
     service_account_available = (
         os.path.exists("service_account.json") or 
-        os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON") is not None or
-        (os.getenv("GOOGLE_PRIVATE_KEY") is not None and os.getenv("GOOGLE_CLIENT_EMAIL") is not None)
+        get_clean_env("GOOGLE_SA_KEY_BASE64") is not None or  # Base64-encoded (production)
+        get_clean_env("GOOGLE_SERVICE_ACCOUNT_JSON") is not None or  # Raw JSON string
+        (get_clean_env("GOOGLE_PRIVATE_KEY") is not None and get_clean_env("GOOGLE_CLIENT_EMAIL") is not None)  # Individual env vars
     )
 
     return {
