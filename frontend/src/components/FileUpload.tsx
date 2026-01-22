@@ -68,32 +68,35 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess }) => {
     };
 
     return (
-        <div className="max-w-[500px] w-full mx-auto">
+        <div className="max-w-[500px] w-full mx-auto h-full flex items-center justify-center">
             <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="glass-card p-5 relative overflow-hidden bg-white/60 dark:bg-slate-900/60"
+                className="glass-card p-5 relative overflow-hidden bg-white/60 dark:bg-slate-900/60 w-full"
             >
                 {/* Decorative header gradient */}
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-sky-400 to-primary" />
 
                 <div className="text-center mb-6">
-                    <h2 className="text-lg font-bold flex items-center justify-center gap-2 text-slate-800 dark:text-white">
-                        <Upload size={20} className="text-primary" />
-                        Upload Documents
+                    <h2 className="text-lg font-bold flex items-center justify-center gap-2 text-slate-800 dark:text-white uppercase tracking-wider">
+                        <Upload size={20} className="text-primary animate-bounce" />
+                        Import File
                     </h2>
-                    <p className="text-xs text-slate-500 mt-1">
-                        Supported: PDF, Word, Excel, PowerPoint
+                    <p className="text-[10px] text-slate-500 mt-1 font-mono uppercase tracking-widest">
+                        Supported Formats: PDF • DOCX • XLSX • PPTX
                     </p>
                 </div>
 
                 <div
                     onClick={() => fileInputRef.current?.click()}
-                    className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all duration-300 group
+                    className={`relative border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all duration-300 group overflow-hidden
                     ${files.length > 0
                             ? 'border-primary/50 bg-primary/5'
-                            : 'border-slate-200 dark:border-slate-700 hover:border-primary/50 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}
+                            : 'border-slate-300 dark:border-slate-700 hover:border-primary hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}
                 >
+                    {/* Scanning Line Effect on Hover */}
+                    <div className="absolute top-0 left-0 w-full h-1 bg-primary/50 shadow-[0_0_10px_#0ea5e9] opacity-0 group-hover:opacity-100 group-hover:animate-scanline pointer-events-none transition-opacity duration-300" />
+
                     <input
                         type="file"
                         ref={fileInputRef}
@@ -104,26 +107,27 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess }) => {
                     />
 
                     {files.length === 0 ? (
-                        <div className="flex flex-col items-center gap-3">
-                            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <Upload size={20} className="text-primary" />
+                        <div className="flex flex-col items-center gap-3 py-4">
+                            <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner">
+                                <Upload size={24} className="text-slate-400 group-hover:text-primary transition-colors" />
                             </div>
                             <div>
-                                <p className="font-semibold text-slate-600 dark:text-slate-300 text-sm">Click to browse</p>
-                                <p className="text-[10px] text-slate-400 uppercase tracking-wider font-medium mt-1">or drag & drop here</p>
+                                <p className="font-bold text-slate-600 dark:text-slate-300 text-sm">Initiate Data Transfer</p>
+                                <p className="text-[10px] text-slate-400 font-mono mt-1">CLICK TO BROWSE OR DRAG FILES</p>
                             </div>
                         </div>
                     ) : (
                         <div className="w-full max-h-[180px] overflow-y-auto flex flex-col gap-2 p-1 custom-scrollbar">
                             {files.map((file, idx) => (
-                                <div key={idx} className="bg-white dark:bg-slate-800 p-2 rounded-lg flex items-center justify-between border border-slate-100 dark:border-slate-700 shadow-sm">
-                                    <div className="flex items-center gap-2 overflow-hidden">
+                                <div key={idx} className="bg-white dark:bg-slate-800 p-2.5 rounded-lg flex items-center justify-between border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all group/file relative overflow-hidden">
+                                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary/0 group-hover/file:bg-primary transition-colors" />
+                                    <div className="flex items-center gap-3 overflow-hidden ml-2">
                                         {getFileIcon(file.name)}
                                         <div className="flex flex-col items-start min-w-0">
-                                            <span className="text-xs font-medium text-slate-700 dark:text-slate-200 truncate w-full max-w-[150px] sm:max-w-[200px]">
+                                            <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate w-full max-w-[150px] sm:max-w-[200px]">
                                                 {file.name}
                                             </span>
-                                            <span className="text-[10px] text-slate-400">
+                                            <span className="text-[10px] text-slate-400 font-mono">
                                                 {(file.size / 1024 / 1024).toFixed(2)} MB
                                             </span>
                                         </div>
@@ -140,9 +144,9 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess }) => {
                             <button
                                 type="button"
                                 onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-                                className="text-primary text-xs font-semibold hover:underline p-2"
+                                className="text-primary text-xs font-bold hover:underline p-2 uppercase tracking-wide"
                             >
-                                + Add more files
+                                + Add Data Module
                             </button>
                         </div>
                     )}
@@ -162,20 +166,20 @@ const FileUpload: React.FC<FileUploadProps> = ({ onUploadSuccess }) => {
                 <button
                     onClick={handleSubmit}
                     disabled={files.length === 0 || status === 'uploading' || status === 'success'}
-                    className="w-full py-3 px-4 mt-5 bg-primary text-white border-none rounded-xl font-bold text-sm cursor-pointer transition-all duration-200 active:scale-[0.98] disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:cursor-not-allowed hover:bg-primary-dark shadow-md shadow-primary/20 flex items-center justify-center gap-2"
+                    className="w-full py-3 px-4 mt-5 bg-primary text-white border-none rounded-xl font-bold text-sm cursor-pointer transition-all duration-200 active:scale-[0.98] disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:cursor-not-allowed hover:bg-primary-dark shadow-lg shadow-primary/20 flex items-center justify-center gap-2 uppercase tracking-wide"
                 >
                     {status === 'uploading' ? (
                         <>
                             <Loader2 size={16} className="animate-spin" />
-                            <span>Processing Documents...</span>
+                            <span>Uploading Data Stream...</span>
                         </>
                     ) : status === 'success' ? (
                         <>
                             <CheckCircle size={16} />
-                            <span>Analysis Complete!</span>
+                            <span>Transfer Complete</span>
                         </>
                     ) : (
-                        <span>Start Analysis</span>
+                        <span>Start Processing</span>
                     )}
                 </button>
 

@@ -11,8 +11,8 @@ export const uploadFiles = async (files: File[]) => {
     return response.data;
 };
 
-export const askQuestion = async (question: string) => {
-    const response = await axios.post(`${API_BASE_URL}/ask`, { question });
+export const askQuestion = async (question: string, signal?: AbortSignal) => {
+    const response = await axios.post(`${API_BASE_URL}/ask`, { question }, { signal });
     return response.data;
 };
 
@@ -33,8 +33,8 @@ export const syncDriveNow = async () => {
     return response.data;
 };
 
-export const askDriveQuestion = async (question: string) => {
-    const response = await axios.post(`${API_BASE_URL}/drive/ask`, { question });
+export const askDriveQuestion = async (question: string, signal?: AbortSignal) => {
+    const response = await axios.post(`${API_BASE_URL}/drive/ask`, { question }, { signal });
     return response.data;
 };
 
