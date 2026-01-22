@@ -44,8 +44,7 @@
 
 @utility glass-card {
   @apply glass;
-  border-radius: 1rem;
-  /* Compact radius */
+  border-radius: 0.75rem; /* 12px - standardized */
 }
 
 :root {

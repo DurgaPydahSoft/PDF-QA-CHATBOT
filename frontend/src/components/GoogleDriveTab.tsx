@@ -44,14 +44,13 @@ export const GoogleDriveTab: React.FC<GoogleDriveTabProps> = ({ isVoiceEnabled, 
         <motion.div
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="w-full h-full flex justify-center"
+            className="w-full h-full"
         >
             {/* The ChatInterface handles the specific drive UI internally now */}
             <ChatInterface
                 mode="drive"
                 isVoiceEnabled={isVoiceEnabled}
                 onToggleVoice={onToggleVoice}
-                compact={true}
                 driveStatus={status}
                 isSyncing={isSyncing}
                 onSyncDrive={handleSyncNow}
