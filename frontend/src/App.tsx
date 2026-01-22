@@ -15,7 +15,6 @@ const App: React.FC = () => {
     const [initialSuggestions, setInitialSuggestions] = useState<string[]>([]);
     const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
     const [agentMode, setAgentMode] = useState<'idle' | 'processing' | 'interacting' | 'speaking'>('idle');
-    const [hasInteracted, setHasInteracted] = useState(false);
 
     const handleUploadSuccess = (chunks: number, suggestions: string[]) => {
         setAgentMode('processing');
@@ -173,7 +172,6 @@ const App: React.FC = () => {
                                                             isVoiceEnabled={isVoiceEnabled}
                                                             onToggleVoice={toggleVoice}
                                                             compact={true}
-                                                            onUserInteraction={() => setHasInteracted(true)}
                                                         />
                                                     </div>
                                                 </div>
