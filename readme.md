@@ -124,6 +124,21 @@ The backend is optimized for deployment on Hugging Face Spaces using Docker.
    * This project includes a **GitHub Action** workflow.
    * Every push to `main` triggers a build and pushes the Docker image to Hugging Face automatically.
 
+### Google Drive Setup
+
+For Google Drive sync functionality, see the comprehensive setup guide:
+
+📖 **[Google Drive Setup Guide](docs/GOOGLE_DRIVE_SETUP.md)**
+
+**Quick Setup:**
+- **Local Development**: Place `service_account.json` in `backend/` directory
+- **Production**: Base64-encode the JSON and add as `GOOGLE_SA_KEY_BASE64` secret in Hugging Face Spaces
+
+Use the helper script to encode your service account:
+```bash
+python backend/scripts/encode_service_account.py
+```
+
 ---
 
 * Google Credentials are sanitized and can be loaded safely from Environment Variables (ideal for Hugging Face/Render hosting).

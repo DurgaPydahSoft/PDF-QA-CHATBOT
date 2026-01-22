@@ -2,6 +2,7 @@ import os
 import io
 import time
 import json
+import base64
 import threading
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
@@ -57,38 +58,53 @@ class DriveSyncService:
 
     def sync_now(self):
         creds_info = None
-        
-        # 1. Try Individual Environment Variables
-        private_key = self._get_env_clean("GOOGLE_PRIVATE_KEY")
-        client_email = self._get_env_clean("GOOGLE_CLIENT_EMAIL")
-        project_id = self._get_env_clean("GOOGLE_PROJECT_ID")
-        private_key_id = self._get_env_clean("GOOGLE_PRIVATE_KEY_ID")
 
         try:
-            if private_key and client_email and project_id and private_key_id:
-                print("Using Google credentials from individual environment variables.")
-                creds_info = {
-                    "type": self._get_env_clean("GOOGLE_TYPE", "service_account"),
-                    "project_id": project_id,
-                    "private_key_id": private_key_id,
-                    "private_key": private_key,
-                    "client_email": client_email,
-                    "client_id": self._get_env_clean("GOOGLE_CLIENT_ID"),
-                    "auth_uri": self._get_env_clean("GOOGLE_AUTH_URI", "https://accounts.google.com/o/oauth2/auth"),
-                    "token_uri": self._get_env_clean("GOOGLE_TOKEN_URI", "https://oauth2.googleapis.com/token"),
-                    "auth_provider_x509_cert_url": self._get_env_clean("GOOGLE_AUTH_PROVIDER_CERT_URL", "https://www.googleapis.com/oauth2/v1/certs"),
-                    "client_x509_cert_url": self._get_env_clean("GOOGLE_CLIENT_CERT_URL") or f"https://www.googleapis.com/robot/v1/metadata/x509/{client_email.replace('@', '%40')}",
-                    "universe_domain": self._get_env_clean("GOOGLE_UNIVERSE_DOMAIN", "googleapis.com")
-                }
+            # 1. PRIORITY: Try Base64-encoded JSON (Production - Hugging Face Spaces)
+            # This avoids newline issues and is the recommended approach for production
+            sa_key_b64 = self._get_env_clean("GOOGLE_SA_KEY_BASE64")
+            if sa_key_b64:
+                try:
+                    print("Using Google credentials from Base64-encoded environment variable (GOOGLE_SA_KEY_BASE64).")
+                    # Decode Base64 to get JSON string
+                    key_json = base64.b64decode(sa_key_b64).decode("utf-8")
+                    creds_info = json.loads(key_json)
+                    print("Successfully decoded Base64 service account credentials.")
+                except Exception as e:
+                    print(f"Error decoding Base64 credentials: {e}")
+                    creds_info = None
             
-            # 2. Try Single JSON Environment Variable
+            # 2. Try Individual Environment Variables (Fallback)
+            if not creds_info:
+                private_key = self._get_env_clean("GOOGLE_PRIVATE_KEY")
+                client_email = self._get_env_clean("GOOGLE_CLIENT_EMAIL")
+                project_id = self._get_env_clean("GOOGLE_PROJECT_ID")
+                private_key_id = self._get_env_clean("GOOGLE_PRIVATE_KEY_ID")
+
+                if private_key and client_email and project_id and private_key_id:
+                    print("Using Google credentials from individual environment variables.")
+                    creds_info = {
+                        "type": self._get_env_clean("GOOGLE_TYPE", "service_account"),
+                        "project_id": project_id,
+                        "private_key_id": private_key_id,
+                        "private_key": private_key,
+                        "client_email": client_email,
+                        "client_id": self._get_env_clean("GOOGLE_CLIENT_ID"),
+                        "auth_uri": self._get_env_clean("GOOGLE_AUTH_URI", "https://accounts.google.com/o/oauth2/auth"),
+                        "token_uri": self._get_env_clean("GOOGLE_TOKEN_URI", "https://oauth2.googleapis.com/token"),
+                        "auth_provider_x509_cert_url": self._get_env_clean("GOOGLE_AUTH_PROVIDER_CERT_URL", "https://www.googleapis.com/oauth2/v1/certs"),
+                        "client_x509_cert_url": self._get_env_clean("GOOGLE_CLIENT_CERT_URL") or f"https://www.googleapis.com/robot/v1/metadata/x509/{client_email.replace('@', '%40')}",
+                        "universe_domain": self._get_env_clean("GOOGLE_UNIVERSE_DOMAIN", "googleapis.com")
+                    }
+            
+            # 3. Try Single JSON Environment Variable (Raw JSON string)
             if not creds_info:
                 env_creds = self._get_env_clean("GOOGLE_SERVICE_ACCOUNT_JSON")
                 if env_creds:
                     print("Using Google credentials from JSON environment variable.")
                     creds_info = json.loads(env_creds)
 
-            # 3. Try Local File
+            # 4. Try Local File (Development/Offline)
             if not creds_info and os.path.exists(self.credentials_path):
                 print(f"Using Google credentials from local file: {self.credentials_path}")
                 with open(self.credentials_path, 'r') as f:
@@ -99,10 +115,15 @@ class DriveSyncService:
                 return
 
             # --- AGGRESSIVE SANITIZATION (Applies to all sources) ---
+            # This is critical for JWT signature validation
             if 'private_key' in creds_info:
                 pk = creds_info['private_key']
-                # Replace literal \n and sanitize whitespace
+                # Replace literal \n with actual newlines (handles escaped newlines from env vars)
                 sanitized_pk = pk.replace('\\n', '\n').strip()
+                # Ensure proper PEM format (should start with -----BEGIN and end with -----END)
+                if not sanitized_pk.startswith('-----BEGIN'):
+                    # If somehow the key lost its headers, this shouldn't happen but handle it
+                    print("Warning: Private key format may be incorrect.")
                 creds_info['private_key'] = sanitized_pk
                 
             creds = service_account.Credentials.from_service_account_info(
