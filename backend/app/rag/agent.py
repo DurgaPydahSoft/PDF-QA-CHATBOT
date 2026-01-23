@@ -1,6 +1,7 @@
 from .embeddings import generate_embeddings
 from .vector_store import VectorStore
 from .llm import get_llm_response
+from typing import List, Dict, Optional
 
 class QAAgent:
     def __init__(self, vector_store: VectorStore):
@@ -36,17 +37,32 @@ class QAAgent:
                 
         return suggestions[:3]
 
-    def ask(self, question: str) -> dict:
-        """Performs RAG to answer the user question."""
+    def ask(self, question: str, conversation_history: Optional[List[Dict[str, str]]] = None, max_history_messages: int = 6) -> dict:
+        """Performs RAG to answer the user question.
+        
+        Args:
+            question: The current question to answer
+            conversation_history: Optional list of previous messages in format [{"role": "user/bot", "content": "..."}]
+            max_history_messages: Maximum number of history messages to include (default: 6, i.e., last 3 exchanges)
+        """
         import time
         t0 = time.perf_counter()
+        
+        # Apply sliding window to conversation history
+        if conversation_history:
+            # Limit to last N messages to control token usage
+            conversation_history = conversation_history[-max_history_messages:]
+            print(f"DEBUG: Using {len(conversation_history)} messages from conversation history")
+            # Debug: Print first and last message to verify history
+            if len(conversation_history) > 0:
+                print(f"DEBUG: First history message: {conversation_history[0].get('role', 'unknown')} - {conversation_history[0].get('content', '')[:100]}...")
+                print(f"DEBUG: Last history message: {conversation_history[-1].get('role', 'unknown')} - {conversation_history[-1].get('content', '')[:100]}...")
         
         # 1. Generate embedding for the question
         query_emb = generate_embeddings([question])[0]
         t1 = time.perf_counter()
         print(f"DEBUG: Embedding generation took {t1 - t0:.2f}s")
         
-        # 2. Search for relevant chunks
         # 2. Search for relevant chunks
         if hasattr(self.vector_store, 'chunks'):
             print(f"DEBUG: Total chunks in store: {len(self.vector_store.chunks)}")
@@ -79,28 +95,71 @@ class QAAgent:
 
         context = "\n\n---\n\n".join(context_parts)
         
-        prompt = f"""You are a friendly, enthusiastic, and highly intelligent AI assistant. Your goal is to provide impressive, enjoyable, and helpful insights from the document.
+        # Build the current question prompt
+        # If there's conversation history, explicitly reference it
+        if conversation_history and len(conversation_history) > 0:
+            # Extract key entities from previous conversation for context
+            # This helps the LLM understand what "both", "they", "these" refer to
+            previous_context_hint = ""
+            # Look for mentions of names or key topics in recent history
+            for msg in conversation_history[-4:]:  # Check last 4 messages
+                content = msg.get('content', '')
+                if len(content) > 50:  # Only use substantial messages
+                    # Extract first 200 chars as context hint
+                    previous_context_hint += content[:200] + "... "
+            
+            # Build a prompt that explicitly references the conversation history
+            prompt = f"""You are a friendly, enthusiastic, and highly intelligent AI assistant. Your goal is to provide impressive, enjoyable, and helpful insights from the document.
 
 Guidelines:
 - **Tone**: Be warm, engaging, and slightly conversational. Use occasional emojis (like ✨, 🚀, 📚, 💡) to make the response lively!
 - **Be Concise but Impressive**: Explain things clearly but with flair.
-- **Cite Sources**: ALways cite the source file for your information using the format **[Source: filename]**.
+- **Cite Sources**: Always cite the source file for your information using the format **[Source: filename]**.
+- **Structure**: Use clear headers and bullet points for readability.
+- **No Hallucinations**: Answer ONLY based on the provided context.
+- **Formatting**: Use Markdown for headers (#), bold (**), and lists.
+- **Conversation Continuity**: This is a FOLLOW-UP question in an ongoing conversation. You MUST reference the previous conversation messages shown above to understand what the current question is asking about. If the question uses pronouns like "both", "they", "these", "among", "who", look at the previous conversation to see who/what was being discussed.
+
+**CRITICAL**: This question is part of an ongoing conversation. The question may refer to people, topics, or comparisons mentioned in the previous messages above. You MUST:
+1. Look at the previous conversation to understand what "both", "they", "these", "among" refer to
+2. Explicitly reference the previous conversation in your answer (e.g., "Based on the previous comparison of X and Y...")
+3. Combine information from BOTH the document context AND the conversation history
+
+Current Question: {question}
+
+Provide a structured answer that:
+1. **Explicitly references** the previous conversation when relevant
+2. Uses the document context to provide accurate information
+3. Maintains conversation continuity
+4. At the very end, includes a section 'Suggestions:' with exactly 3 short, relevant follow-up questions (maximum 10 words each). Format them as a numbered list (1., 2., 3.).
+
+Answer:"""
+        else:
+            # No history, use standard prompt
+            prompt = f"""You are a friendly, enthusiastic, and highly intelligent AI assistant. Your goal is to provide impressive, enjoyable, and helpful insights from the document.
+
+Guidelines:
+- **Tone**: Be warm, engaging, and slightly conversational. Use occasional emojis (like ✨, 🚀, 📚, 💡) to make the response lively!
+- **Be Concise but Impressive**: Explain things clearly but with flair.
+- **Cite Sources**: Always cite the source file for your information using the format **[Source: filename]**.
 - **Structure**: Use clear headers and bullet points for readability.
 - **No Hallucinations**: Answer ONLY based on the provided context.
 - **Formatting**: Use Markdown for headers (#), bold (**), and lists.
 
-Context:
-{context}
-
-Question: {question}
+Current Question: {question}
 
 Provide a structured answer. At the very end, include a section 'Suggestions:' with exactly 3 short, relevant follow-up questions (maximum 10 words each). Format them as a numbered list (1., 2., 3.).
 
 Answer:"""
 
-        # 4. Get response from LLM
+        # 4. Get response from LLM with conversation history and RAG context
         t3 = time.perf_counter()
-        response = get_llm_response(prompt)
+        # Pass both the prompt (question) and the RAG context separately
+        response = get_llm_response(
+            prompt, 
+            conversation_history=conversation_history,
+            rag_context=context
+        )
         t4 = time.perf_counter()
         print(f"DEBUG: LLM generation took {t4 - t3:.2f}s")
         print(f"DEBUG: Total RAG time: {t4 - t0:.2f}s")

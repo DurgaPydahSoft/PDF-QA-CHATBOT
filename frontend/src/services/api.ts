@@ -11,8 +11,21 @@ export const uploadFiles = async (files: File[]) => {
     return response.data;
 };
 
-export const askQuestion = async (question: string, signal?: AbortSignal) => {
-    const response = await axios.post(`${API_BASE_URL}/ask`, { question }, { signal });
+export interface ConversationMessage {
+    role: 'user' | 'bot';
+    content: string;
+}
+
+export const askQuestion = async (
+    question: string, 
+    conversation_history?: ConversationMessage[],
+    signal?: AbortSignal
+) => {
+    const payload: { question: string; conversation_history?: ConversationMessage[] } = { question };
+    if (conversation_history && conversation_history.length > 0) {
+        payload.conversation_history = conversation_history;
+    }
+    const response = await axios.post(`${API_BASE_URL}/ask`, payload, { signal });
     return response.data;
 };
 
@@ -33,8 +46,16 @@ export const syncDriveNow = async () => {
     return response.data;
 };
 
-export const askDriveQuestion = async (question: string, signal?: AbortSignal) => {
-    const response = await axios.post(`${API_BASE_URL}/drive/ask`, { question }, { signal });
+export const askDriveQuestion = async (
+    question: string, 
+    conversation_history?: ConversationMessage[],
+    signal?: AbortSignal
+) => {
+    const payload: { question: string; conversation_history?: ConversationMessage[] } = { question };
+    if (conversation_history && conversation_history.length > 0) {
+        payload.conversation_history = conversation_history;
+    }
+    const response = await axios.post(`${API_BASE_URL}/drive/ask`, payload, { signal });
     return response.data;
 };
 

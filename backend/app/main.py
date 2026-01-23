@@ -125,11 +125,16 @@ async def ask_question(payload: dict):
     question = payload.get("question")
     if not question: raise HTTPException(status_code=400, detail="Question is required.")
     
+    # Get conversation history (optional, for maintaining context)
+    conversation_history = payload.get("conversation_history", [])
+    if not isinstance(conversation_history, list):
+        conversation_history = []
+    
     if len(local_vector_store.chunks) == 0:
         raise HTTPException(status_code=400, detail="No local documents uploaded.")
     
     try:
-        agent_result = local_agent.ask(question)
+        agent_result = local_agent.ask(question, conversation_history=conversation_history)
         answer = agent_result["answer"]
         sources = agent_result["sources"]
         
@@ -201,8 +206,13 @@ async def ask_drive_question(payload: dict):
     question = payload.get("question")
     if not question: raise HTTPException(status_code=400, detail="Question is required.")
     
+    # Get conversation history (optional, for maintaining context)
+    conversation_history = payload.get("conversation_history", [])
+    if not isinstance(conversation_history, list):
+        conversation_history = []
+    
     try:
-        agent_result = drive_agent.ask(question)
+        agent_result = drive_agent.ask(question, conversation_history=conversation_history)
         answer = agent_result["answer"]
         sources = agent_result["sources"]
         

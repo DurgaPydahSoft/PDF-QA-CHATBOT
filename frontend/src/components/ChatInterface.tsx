@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, User, Bot, Trash2, Mic, Loader2, Volume2, VolumeX, Cloud, RefreshCcw, AlertTriangle, Square, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { askQuestion, askDriveQuestion, generateAudio } from '../services/api';
+import { askQuestion, askDriveQuestion, generateAudio, type ConversationMessage } from '../services/api';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -151,6 +151,24 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
     const currentTypewriterTextRef = useRef<string>('');
 
+    // Ensure messages are reset on component mount (page refresh)
+    useEffect(() => {
+        // Reset messages to initial state on mount
+        // This ensures chat history is cleared on page refresh
+        setMessages([
+            {
+                role: 'bot',
+                content: mode === 'local'
+                    ? "I have knowledge of your document now! Feel free to ask me any questions you have. 📚✨"
+                    : "I am connected to your Google Drive archive! How can I help you today? ☁️🤖"
+            }
+        ]);
+        setSuggestions([]);
+        setInput('');
+        setIsLoading(false);
+        setIsTyping(false);
+    }, [mode]); // Reset when mode changes or component mounts
+
     // Handle window resize to update sidebar visibility
     useEffect(() => {
         const handleResize = () => {
@@ -287,8 +305,26 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         abortControllerRef.current = controller;
 
         try {
+            // Prepare conversation history
+            // Note: 'messages' here is the state BEFORE we added the current userMessage
+            // So we need to include all messages except the initial greeting
+            const conversationHistory: ConversationMessage[] = messages
+                .filter((_, idx) => idx > 0) // Skip the first message (initial greeting)
+                .map(msg => ({
+                    role: msg.role === 'user' ? 'user' : 'bot' as 'user' | 'bot',
+                    content: msg.content
+                }));
+            
+            // Debug logging
+            console.log('Sending conversation history:', conversationHistory.length, 'messages');
+            if (conversationHistory.length > 0) {
+                console.log('First history msg:', conversationHistory[0].role, conversationHistory[0].content.substring(0, 50));
+                console.log('Last history msg:', conversationHistory[conversationHistory.length - 1].role, conversationHistory[conversationHistory.length - 1].content.substring(0, 50));
+            }
+            console.log('Current question:', messageToSend);
+            
             const apiCall = mode === 'drive' ? askDriveQuestion : askQuestion;
-            const data = await apiCall(messageToSend, controller.signal);
+            const data = await apiCall(messageToSend, conversationHistory, controller.signal);
             const fullResponse = data.answer;
 
             // Extract suggestions if present

@@ -28,7 +28,7 @@ const Home: React.FC<HomeProps> = ({ onGetStarted }) => {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.2 }}
-                className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black leading-tight bg-gradient-to-r from-slate-900 via-primary to-slate-700 dark:from-white dark:via-sky-400 dark:to-slate-400 bg-clip-text text-transparent mb-4 sm:mb-6 tracking-tight"
+                className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black leading-tight bg-linear-to-r from-slate-900 via-primary to-slate-700 dark:from-white dark:via-sky-400 dark:to-slate-400 bg-clip-text text-transparent mb-4 sm:mb-6 tracking-tight"
             >
                 Ask your PDF anything.
             </motion.h1>
