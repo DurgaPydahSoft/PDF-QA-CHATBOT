@@ -2,17 +2,16 @@ import requests
 import os
 from typing import List, Dict, Optional
 from dotenv import load_dotenv
+from .api_key_manager import api_key_manager
 
 load_dotenv()
-
-raw_key = os.getenv("OPENROUTER_API_KEY")
-OPENROUTER_API_KEY = raw_key.strip().strip('"').strip("'") if raw_key else None
 
 def get_llm_response(
     prompt: str, 
     model: str = "mistralai/devstral-2512:free",
     conversation_history: Optional[List[Dict[str, str]]] = None,
-    rag_context: Optional[str] = None
+    rag_context: Optional[str] = None,
+    session_id: Optional[str] = None
 ) -> str:
     """Sends a prompt to OpenRouter and returns the LLM response.
     
@@ -21,9 +20,13 @@ def get_llm_response(
         model: The model to use
         conversation_history: Optional list of previous messages in format [{"role": "user/assistant", "content": "..."}]
         rag_context: Optional RAG context from document search
+        session_id: Optional session identifier for consistent key assignment
     """
-    if not OPENROUTER_API_KEY:
-        return "Error: OPENROUTER_API_KEY not found in environment."
+    # Get API key for this session (maintains consistency within conversation)
+    api_key = api_key_manager.get_key_for_session(session_id=session_id)
+    
+    if not api_key:
+        return "Error: No OpenRouter API keys available. Please configure OPENROUTER_API_KEY or OPENROUTER_API_KEYS in environment."
 
     try:
         # Build messages array
@@ -69,7 +72,7 @@ def get_llm_response(
         response = requests.post(
             url="https://openrouter.ai/api/v1/chat/completions",
             headers={
-                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json"
             },
             json={
@@ -79,8 +82,49 @@ def get_llm_response(
         )
         response.raise_for_status()
         data = response.json()
+        
+        # Record successful API call
+        api_key_manager.record_success(api_key)
+        
         return data['choices'][0]['message']['content']
+    except requests.exceptions.HTTPError as e:
+        # Handle rate limit or authentication errors
+        api_key_manager.record_error(api_key)
+        
+        # If rate limited or auth error, try with different key (fallback)
+        if e.response and e.response.status_code in [429, 401, 403]:
+            print(f"API key {api_key[:10]}... failed with {e.response.status_code}, trying fallback...")
+            fallback_key = api_key_manager.get_key_with_fallback(
+                session_id=session_id,
+                exclude_keys=[api_key]
+            )
+            
+            if fallback_key and fallback_key != api_key:
+                try:
+                    # Retry with fallback key
+                    response = requests.post(
+                        url="https://openrouter.ai/api/v1/chat/completions",
+                        headers={
+                            "Authorization": f"Bearer {fallback_key}",
+                            "Content-Type": "application/json"
+                        },
+                        json={
+                            "model": model,
+                            "messages": messages
+                        }
+                    )
+                    response.raise_for_status()
+                    data = response.json()
+                    api_key_manager.record_success(fallback_key)
+                    print(f"Fallback key succeeded")
+                    return data['choices'][0]['message']['content']
+                except Exception as retry_error:
+                    print(f"Fallback key also failed: {retry_error}")
+        
+        print(f"Error calling OpenRouter with key {api_key[:10]}...: {e}")
+        return f"Error: {str(e)}"
     except Exception as e:
+        api_key_manager.record_error(api_key)
         print(f"Error calling OpenRouter: {e}")
         return f"Error: {e}"
 

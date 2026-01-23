@@ -154,11 +154,24 @@ Answer:"""
 
         # 4. Get response from LLM with conversation history and RAG context
         t3 = time.perf_counter()
+        # Generate session ID from conversation history for consistent key assignment
+        # Use hash of first user message or question as session identifier
+        import hashlib
+        session_id = None
+        if conversation_history and len(conversation_history) > 0:
+            # Use first user message as session identifier
+            first_user_msg = next((msg.get('content', '') for msg in conversation_history if msg.get('role') == 'user'), question)
+            session_id = hashlib.md5(first_user_msg.encode()).hexdigest()[:16]
+        else:
+            # New conversation, use question as session ID
+            session_id = hashlib.md5(question.encode()).hexdigest()[:16]
+        
         # Pass both the prompt (question) and the RAG context separately
         response = get_llm_response(
             prompt, 
             conversation_history=conversation_history,
-            rag_context=context
+            rag_context=context,
+            session_id=session_id
         )
         t4 = time.perf_counter()
         print(f"DEBUG: LLM generation took {t4 - t3:.2f}s")

@@ -77,6 +77,12 @@ drive_sync.start()
 async def root():
     return {"message": "Welcome to the AI-Based PDF Q&A Agent API by Bannu"}
 
+@app.get("/api-keys/stats")
+async def get_api_key_stats():
+    """Get API key usage statistics (for monitoring)"""
+    from app.rag.api_key_manager import api_key_manager
+    return api_key_manager.get_stats()
+
 # --- LOCAL UPLOAD ENDPOINTS ---
 
 @app.post("/upload-pdf")
